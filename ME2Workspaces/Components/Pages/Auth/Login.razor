@@ -1,0 +1,128 @@
+﻿@layout LayoutVazio
+@using ME2Workspaces.Components.Layout
+@inject AuthenticationService AuthService
+@rendermode InteractiveServer
+@page "/login"
+
+<div class="login-container">
+    <div class="left-section">
+        <div class="illustration-container">
+            <img src="/wallpapers/loginwall.png" alt="Illustration" class="illustration" />
+        </div>
+    </div>
+    <div class="right-section">
+        <h2>Bem-vindo à Plataforma ME2</h2>
+        <p>Faça o seu login e tenha acesso a uma plataforma completa de gestão de campanhas.</p>
+        <div>
+            <div class="form-floating mb-3">
+                <input @bind="email" class="form-control" placeholder="name@example.com" />
+                <label for="email" class="form-label">E-mail</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input @bind="senha" type="password" class="form-control" placeholder="password" />
+                <label for="password" class="form-label">Senha</label>
+            </div>
+            <div>
+                <button @onclick="HandleLogin" class="w-100 btn btn-primary">Entrar</button>
+            </div>
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="text-danger mt-2">
+                    <p>@ErrorMessage</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        display: flex;
+        height: 100vh;
+        background-color: #f5f5f5;
+    }
+
+    .left-section {
+        flex: 1;
+        background-color: #0d368f;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .logo {
+        width: 150px;
+    }
+
+    .illustration {
+        max-width: 100%;
+        height: 100vh;
+    }
+
+    .right-section {
+        flex: 1;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .right-section h2 {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+            color: #0d368f;
+    }
+
+    .right-section p {
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+
+    .btn-primary {
+        background-color: #0d368f;
+        border: none;
+    }
+
+    .btn-primary:hover {
+            background-color: #0d368f;
+    }
+
+    .text-danger {
+        color: red;
+    }
+</style>
+
+@code {
+    private string email = string.Empty;
+    private string senha = string.Empty;
+    private string ErrorMessage = string.Empty;
+
+    private async Task HandleLogin()
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(senha))
+        {
+            ErrorMessage = "Por favor, preencha todos os campos.";
+            return;
+        }
+
+        // Tenta efetuar o login usando o serviço de autenticação
+        bool sucesso = await AuthService.LoginAsync(email, senha);
+
+        if (!sucesso)
+        {
+            ErrorMessage = "Usuário ou senha inválidos.";
+        }
+        else
+        {
+            // Armazena o email no SessionStorage
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userEmail", email);
+
+            // Redireciona para a página inicial após login bem-sucedido
+            NavigationManager.NavigateTo("/");
+        }
+    }
+}

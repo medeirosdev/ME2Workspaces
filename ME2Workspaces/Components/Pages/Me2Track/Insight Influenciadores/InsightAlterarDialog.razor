@@ -1,0 +1,314 @@
+﻿@rendermode InteractiveServer
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@using ME2Workspaces.ModulosME2.TarefasInfluencer
+@inject ISnackbar Snackbar
+
+<MudDialog Style="width: 800px; max-height: 90vh;">
+    <TitleContent>
+        <div class="d-flex align-center">
+            @if (novoItem)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-3" />
+                <MudText Typo="Typo.h5">Novo Insight</MudText>
+            }
+            else
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />
+                <MudText Typo="Typo.h5">Editar Insight</MudText>
+            }
+        </div>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="form" Class="mt-4">
+            <MudGrid Spacing="3">
+                <!-- Seção Principal -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="0" Class="pa-4 rounded-lg border-1">
+                        <MudText Typo="Typo.h6" Class="mb-4">Informações Principais</MudText>
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="TipoTarefa"
+                                           Label="Tipo do Insight"
+                                           @bind-Value="insight.TipoInsight"
+                                           Required="true"
+                                           RequiredError="Tipo do insight é obrigatório"
+                                           AnchorOrigin="Origin.BottomCenter">
+                                    @foreach (var value in Enum.GetValues(typeof(TipoTarefa)))
+                                    {
+                                        <MudSelectItem Value="@((TipoTarefa)value)">@value</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="TipoRedeSocial"
+                                           Label="Rede Social"
+                                           @bind-Value="insight.AtividadeDoPerfil"
+                                           Required="true"
+                                           RequiredError="Rede social é obrigatória"
+                                           AnchorOrigin="Origin.BottomCenter">
+                                    @foreach (var value in Enum.GetValues(typeof(TipoRedeSocial)))
+                                    {
+                                        <MudSelectItem Value="@((TipoRedeSocial)value)">@value</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Métricas de Alcance -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="0" Class="pa-4 rounded-lg border-1">
+                        <MudText Typo="Typo.h6" Class="mb-4">Métricas de Alcance</MudText>
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="long"
+                                                 Label="Visualizações"
+                                                 @bind-Value="insight.Visualizacoes"
+                                                 Required="true"
+                                                 RequiredError="Visualizações é obrigatório"
+                                                 Min="0"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.Visibility" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="long"
+                                                 Label="Interações"
+                                                 @bind-Value="insight.Interacoes"
+                                                 Required="true"
+                                                 RequiredError="Interações é obrigatório"
+                                                 Min="0"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.TouchApp" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="int"
+                                                 Label="Toques na Figurinha"
+                                                 @bind-Value="insight.AlcanceSeguidores"
+                                                 Required="true"
+                                                 Min="0"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.Gesture" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="int"
+                                                 Label="Cliques no Link"
+                                                 @bind-Value="insight.ContasAlcancadas"
+                                                 Required="true"
+                                                 Min="0"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.Link" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Métricas de Engajamento -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="0" Class="pa-4 rounded-lg border-1">
+                        <MudText Typo="Typo.h6" Class="mb-4">Métricas de Engajamento</MudText>
+                        <MudGrid>
+                            <MudItem xs="12" sm="4">
+                                <MudNumericField T="int"
+                                                 Label="Curtidas"
+                                                 @bind-Value="insight.Curtidas"
+                                                 Required="true"
+                                                 Min="0"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.ThumbUp" />
+                            </MudItem>
+                            <MudItem xs="12" sm="4">
+                                <MudNumericField T="int"
+                                                 Label="Respostas"
+                                                 @bind-Value="insight.Respostas"
+                                                 Required="true"
+                                                 Min="0"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.Comment" />
+                            </MudItem>
+                            <MudItem xs="12" sm="4">
+                                <MudNumericField T="int"
+                                                 Label="Compartilhamentos"
+                                                 @bind-Value="insight.Compartilhamentos"
+                                                 Required="true"
+                                                 Min="0"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.Share" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Métricas de Navegação -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="0" Class="pa-4 rounded-lg border-1">
+                        <MudText Typo="Typo.h6" Class="mb-4">Métricas de Navegação</MudText>
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="int"
+                                                 Label="Avanços"
+                                                 @bind-Value="insight.Avanco"
+                                                 Required="true"
+                                                 Min="0"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.ArrowForward" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField T="int"
+                                                 Label="Contas com Engajamento"
+                                                 @bind-Value="insight.ContasComEngajamento"
+                                                 Required="true"
+                                                 Min="0"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentIcon="@Icons.Material.Filled.Group" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancelar"
+                   Color="Color.Default"
+                   Variant="Variant.Text"
+                   StartIcon="@Icons.Material.Filled.Cancel">
+            Cancelar
+        </MudButton>
+        <MudButton OnClick="Salvar"
+                   Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@(_isSaving)">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Salvando...</MudText>
+            }
+            else
+            {
+                @("Salvar")
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public bool novoItem { get; set; }
+    [Parameter] public long insightId { get; set; }
+    [Parameter] public long ID_Influencer { get; set; }
+    [Parameter] public long IDCampanha { get; set; }
+    [Parameter] public long ID_Usuario { get; set; }
+
+    private MudForm form = default!;
+    private Insight insight = new();
+    private bool _isSaving;
+    private readonly InsightService insightService = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (!novoItem)
+            {
+                var loadedInsight = await insightService.GetInsightById(insightId);
+                if (loadedInsight is not null)
+                {
+                    insight = loadedInsight;
+                }
+                else
+                {
+                    Snackbar.Add("Insight não encontrado", Severity.Error);
+                    MudDialog.Cancel();
+                }
+            }
+            else
+            {
+                insight = new Insight
+                    {
+                        DataInclusao = DateTime.Now,
+                        ID_Influencer = ID_Influencer,
+                        ID_Campanha = IDCampanha,
+                        ID_Usuario = ID_Usuario,
+                        // Inicializa com zeros
+                        TipoInsight = 0,
+                        AtividadeDoPerfil = 0
+                    };
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao carregar dados: {ex.Message}", Severity.Error);
+            MudDialog.Cancel();
+        }
+    }
+
+    private async Task Salvar()
+    {
+        try
+        {
+            await form.Validate();
+            if (!form.IsValid) return;
+
+            _isSaving = true;
+            StateHasChanged();
+
+            if (novoItem)
+            {
+                var service = new InfluencerFormService();
+                var influencer = await service.GetInfluencerByIdAsync(ID_Influencer);
+
+                if (influencer is not null)
+                {
+                    insight.UsernameInfluencer = $"@{influencer.Instagram}";
+                }
+
+                await insightService.CreateInsight(insight);
+                Snackbar.Add("Insight criado com sucesso!", Severity.Success);
+            }
+            else
+            {
+                await insightService.UpdateInsight(insight);
+                Snackbar.Add("Insight atualizado com sucesso!", Severity.Success);
+            }
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao salvar: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancelar()
+    {
+        if (_isSaving) return;
+        MudDialog.Cancel();
+    }
+}
+
+<style>
+    .mud-dialog {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .mud-dialog-content {
+        overflow-y: auto;
+    }
+
+    .border-1 {
+        border: 1px solid var(--mud-palette-lines-default);
+    }
+</style>

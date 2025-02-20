@@ -1,0 +1,376 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<style>
+    /* Import Google Fonts */
+    @@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    /* Global styles */
+    :root {
+        --primary-color: #0033a0;
+        --secondary-color: #fddd0d;
+        --text-color: #2d3748;
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mud-container {
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-color);
+        background: var(--background-color);
+    }
+
+    /* Hero Section */
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        background: linear-gradient(120deg, var(--primary-color), #1a56db);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        line-height: 1.8;
+        color: #4a5568;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    /* Metrics Cards */
+    .metric-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        transition: var(--transition-base);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        transform: scaleX(0);
+        transition: var(--transition-base);
+    }
+
+    .metric-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .metric-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .metric-number {
+        font-size: 3rem;
+        font-weight: 700;
+        background: linear-gradient(120deg, var(--primary-color), #1a56db);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1;
+    }
+
+    /* Feature Cards */
+    .feature-card {
+        background: white;
+        border-radius: 1rem;
+        transition: var(--transition-base);
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: var(--card-shadow);
+    }
+
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+    }
+
+    .feature-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--primary-color);
+    }
+
+    /* Partner Logos */
+    .partner-section {
+        padding: 4rem 0;
+        background: linear-gradient(to right, #f7fafc, #edf2f7);
+        border-radius: 1rem;
+    }
+
+    .partner-logo {
+        height: 40px;
+        filter: grayscale(100%);
+        opacity: 0.7;
+        transition: var(--transition-base);
+        cursor: pointer;
+    }
+
+    .partner-logo:hover {
+        filter: grayscale(0%);
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    /* Footer */
+    .footer-text {
+        font-size: 0.875rem;
+        color: #718096;
+        padding: 2rem 0;
+        border-top: 1px solid #e2e8f0;
+        margin-top: 2rem;
+    }
+
+    /* Animations */
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+
+        .metric-number {
+            font-size: 2.5rem;
+        }
+
+        .feature-card {
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-16">
+    @if (dadosSessaoUsuario != null)
+    {
+        <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Class="mb-8">
+            <MudText Typo="Typo.h5">
+                Olá, @dadosSessaoUsuario.Username! Bem-vindo(a) de volta.
+            </MudText>
+        </MudAlert>
+    }
+
+    <!-- Hero Section -->
+    <MudStack Spacing="8" Class="text-center mb-16 animate-fade-in">
+        <MudText Typo="Typo.h1" Color="Color.Primary" Class="font-weight-bold hero-title">
+            Bem-vindo(a) ao ME2 Workspace
+        </MudText>
+        <MudText Typo="Typo.h5" Color="Color.Secondary" Class="mx-auto" Style="max-width: 800px;">
+            Sua plataforma completa para gerenciamento de influenciadores e campanhas digitais
+        </MudText>
+        <MudText Color="Color.Dark" Class="mx-auto mt-4" Style="max-width: 700px;">
+            Transforme sua presença digital com nossa solução all-in-one para gestão de campanhas, 
+            análise de performance e colaboração com influenciadores. Maximize seus resultados com 
+            ferramentas poderosas e insights em tempo real.
+        </MudText>
+    </MudStack>
+
+    <!-- Metrics Cards -->
+    <MudGrid Class="mb-16">
+        <MudItem xs="2" sm="4">
+            <MudPaper Elevation="3" Class="pa-6 text-center metric-card">
+                <MudIcon Icon="@Icons.Material.Filled.Groups" Color="Color.Primary" Size="Size.Large" Class="mb-4" />
+                <MudText Typo="Typo.h3" Color="Color.Primary" Class="mb-2 font-weight-bold metric-number">10k+</MudText>
+                <MudText>Influenciadores Ativos</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Conectando marcas a criadores de conteúdo
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="5" sm="4">
+            <MudPaper Elevation="3" Class="pa-6 text-center metric-card">
+                <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Primary" Size="Size.Large" Class="mb-4" />
+                <MudText Typo="Typo.h3" Color="Color.Primary" Class="mb-2 font-weight-bold metric-number">98%</MudText>
+                <MudText>Taxa de Sucesso</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Campanhas entregues com excelência
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="5" sm="4">
+            <MudPaper Elevation="3" Class="pa-6 text-center metric-card">
+                <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Primary" Size="Size.Large" Class="mb-4" />
+                <MudText Typo="Typo.h3" Color="Color.Primary" Class="mb-2 font-weight-bold metric-number">5M+</MudText>
+                <MudText>Alcance Mensal</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Impactando milhões de pessoas
+                </MudText>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="5" sm="4">
+            <MudCard Elevation="2" Class="feature-card">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudIcon Icon="@Icons.Material.Filled.Campaign" Color="Color.Primary" Size="Size.Large" Class="mr-3" />
+                        <MudText Typo="Typo.h6">Gestão de Campanhas</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText>
+                        Gerencie todas as suas campanhas em um só lugar, com métricas em tempo real e insights valiosos.
+                        Acompanhe o desempenho, otimize resultados e tome decisões baseadas em dados.
+                    </MudText>
+
+
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="5" sm="4">
+            <MudCard Elevation="2" Class="feature-card">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudIcon Icon="@Icons.Material.Filled.Analytics" Color="Color.Primary" Size="Size.Large" Class="mr-3" />
+                        <MudText Typo="Typo.h6">Análise de Performance</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText>
+                        Acompanhe o desempenho dos seus influenciadores com métricas detalhadas e relatórios personalizados.
+                        Visualize tendências e identifique oportunidades de crescimento.
+                    </MudText>
+
+
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="5" sm="4">
+            <MudCard Elevation="2" Class="feature-card">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudIcon Icon="@Icons.Material.Filled.Security" Color="Color.Primary" Size="Size.Large" Class="mr-3" />
+                        <MudText Typo="Typo.h6">Segurança Avançada</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText>
+                        Seus dados protegidos com a mais alta tecnologia de segurança e criptografia.
+                        Conformidade com LGPD e padrões internacionais de proteção de dados.
+                    </MudText>
+
+
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+ @*    <!-- Features Section -->
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="text-center mb-8">
+        Recursos Exclusivos
+    </MudText> *@
+
+    <MudGrid Class="mb-16">
+
+       
+    </MudGrid>
+
+    <!-- Partners Section -->
+    <MudPaper Elevation="0" Class="pa-8 partner-section">
+
+        <MudText Typo="Typo.h5" Color="Color.Primary" Class="text-center mb-8">
+            Empresas que Confiam em Nós
+        </MudText>
+
+        <MudGrid Justify="Justify.Center" Class="gap-8">
+            <MudItem>
+                <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png"
+                     alt="Google"
+                     class="partner-logo"
+                     @onmouseover="@(e => OnLogoHover(e))"
+                     @onmouseout="@(e => OnLogoLeave(e))" />
+            </MudItem>
+            <MudItem>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Meta_Platforms_Inc._logo.svg/2560px-Meta_Platforms_Inc._logo.svg.png"
+                     alt="Meta"
+                     class="partner-logo"
+                     @onmouseover="@(e => OnLogoHover(e))"
+                     @onmouseout="@(e => OnLogoLeave(e))" />
+            </MudItem>
+            <MudItem>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2048px-Instagram_logo_2016.svg.png"
+                     alt="Instagram"
+                     class="partner-logo"
+                     @onmouseover="@(e => OnLogoHover(e))"
+                     @onmouseout="@(e => OnLogoLeave(e))" />
+            </MudItem>
+            <MudItem>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/2560px-YouTube_full-color_icon_%282017%29.svg.png"
+                     alt="YouTube"
+                     class="partner-logo"
+                     @onmouseover="@(e => OnLogoHover(e))"
+                     @onmouseout="@(e => OnLogoLeave(e))" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Footer -->
+    <MudDivider Class="mt-16 mb-8" />
+    <MudText Align="Align.Center" Class="footer-text">
+        © 2024 ME2 Workspace. Todos os direitos reservados.
+    </MudText>
+</MudContainer>
+
+@code {
+    public string storedEmail { get; set; }
+    public AuthUserModel dadosSessaoUsuario { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await VerificarLogin();
+    }
+
+    public async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+                if (dadosSessaoUsuario == null)
+                    NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
+        }
+    }
+
+    private void OnLogoHover(MouseEventArgs e)
+    {
+        // In a real implementation, you might want to use JavaScript interop
+        // to handle hover effects more smoothly
+    }
+
+    private void OnLogoLeave(MouseEventArgs e)
+    {
+        // Handle mouse leave event
+    }
+}

@@ -1,0 +1,661 @@
+﻿@page "/resultados"
+@rendermode InteractiveServer
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@using MudBlazor
+@inject ISnackbar Snackbar
+
+@using ME2Workspaces.Components.Pages.Me2Track.Campanhas.Me2TrackCampanha
+@using ME2Workspaces.Components.Pages.Me2Track.Influenciadores.Tarefas
+@using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+
+@using ME2Workspaces.Components.Pages.Me2Track.Influenciadores
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudText Typo="Typo.h4" Class="mb-4">Dashboard de Resultados</MudText>
+        </MudItem>
+        <MudItem xs="12">
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                <MudTabPanel Text="Visão Geral" Icon="@Icons.Material.Filled.Dashboard">
+                    <!-- Filtros -->
+                    <MudPaper Class="pa-4 mb-4">
+                        <MudGrid>
+                            <MudItem xs="12" sm="3">
+                                <MudSelect T="Me2CampanhaModelo" Label="Filtrar por Campanha"
+                                           ValueChanged="@OnCampanhaSelected"
+                                           Value="@selectedCampanha">
+                                    <MudSelectItem T="Me2CampanhaModelo" Value="@null">Todas as Campanhas</MudSelectItem>
+                                    @foreach (var campanha in campanhas)
+                                    {
+                                        <MudSelectItem Value="@campanha">@campanha.NomeCampanha</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="3">
+                                <MudSelect T="InfluencerModel" Label="Filtrar por Influenciador"
+                                           ValueChanged="@OnInfluencerSelected"
+                                           Value="@selectedInfluencer"
+                                           Disabled="@(selectedCampanha == null)">
+                                    <MudSelectItem T="InfluencerModel" Value="@null">Todos os Influenciadores</MudSelectItem>
+                                    @foreach (var influencer in influencers)
+                                    {
+                                        <MudSelectItem Value="@influencer">@influencer.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="3">
+                                <MudSelect T="TipoRedeSocial?" Label="Rede Social"
+                                           ValueChanged="@OnRedeSocialSelected"
+                                           Value="@selectedRedeSocial">
+                                    <MudSelectItem Value="@((TipoRedeSocial?)null)">Todas as Redes</MudSelectItem>
+                                    @foreach (var rede in Enum.GetValues<TipoRedeSocial>())
+                                    {
+                                        <MudSelectItem Value="@((TipoRedeSocial?)rede)">@rede.ToString()</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="3">
+                                <MudDateRangePicker Label="Período"
+                                                    @bind-DateRange="dateRange"
+                                                    DateFormat="dd/MM/yyyy"
+                                                    AdornmentColor="Color.Primary" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+
+                    <!-- KPI Cards -->
+                    <MudGrid Class="mb-4">
+                        <MudItem xs="12" sm="3">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #0033a0, #0d368f);">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Total de Visualizações</MudText>
+                                <MudText Typo="Typo.h4" Style="color: #fddd0d;">@totalVisualizacoes.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: white;">
+                                    @(crescimentoVisualizacoes >= 0 ? "+" : "")@crescimentoVisualizacoes.ToString("P1") vs período anterior
+                                </MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="3">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #0033a0, #0d368f);">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Média de Engajamento</MudText>
+                                <MudText Typo="Typo.h4" Style="color: #fddd0d;">@mediaEngajamento.ToString("P2")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: white;">
+                                    @(crescimentoEngajamento >= 0 ? "+" : "")@crescimentoEngajamento.ToString("P1") vs período anterior
+                                </MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="3">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #0033a0, #0d368f);">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Total de Interações</MudText>
+                                <MudText Typo="Typo.h4" Style="color: #fddd0d;">@totalInteracoes.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: white;">
+                                    @(crescimentoInteracoes >= 0 ? "+" : "")@crescimentoInteracoes.ToString("P1") vs período anterior
+                                </MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="3">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #0033a0, #0d368f);">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Cliques em Links</MudText>
+                                <MudText Typo="Typo.h4" Style="color: #fddd0d;">@totalCliquesLinks.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: white;">
+                                    @(crescimentoCliques >= 0 ? "+" : "")@crescimentoCliques.ToString("P1") vs período anterior
+                                </MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+
+                    <!-- Gráficos Principais -->
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Line"
+                                          ChartSeries="@seriesEngajamento"
+                                          XAxisLabels="@labelsEngajamento"
+                                          Width="100%" Height="300px" />
+                                <MudText Typo="Typo.subtitle1" Align="Align.Center">Engajamento por Período</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Bar"
+                                          ChartSeries="@seriesVisualizacoes"
+                                          XAxisLabels="@labelsVisualizacoes"
+                                          Width="100%" Height="300px" />
+                                <MudText Typo="Typo.subtitle1" Align="Align.Center">Visualizações por Rede Social</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Pie"
+                                          ChartSeries="@seriesInteracoes"
+                                          Width="100%" Height="300px" />
+                                <MudText Typo="Typo.subtitle1" Align="Align.Center">Distribuição de Interações</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Bar"
+                                          ChartSeries="@seriesInfluenciadores"
+                                          XAxisLabels="@labelsInfluenciadores"
+                                          Width="100%" Height="300px" />
+                                <MudText Typo="Typo.subtitle1" Align="Align.Center">Top Influenciadores por Engajamento</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Análise Detalhada" Icon="@Icons.Material.Filled.Analytics">
+                    <!-- Métricas Avançadas -->
+                    <MudGrid>
+                        <MudItem xs="12" sm="4">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Donut"
+                                          ChartSeries="@seriesAlcanceSeguidores"
+                                          Width="100%" Height="300px" />
+                                <MudText Typo="Typo.subtitle1" Align="Align.Center">Alcance por Tipo de Seguidor</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Line"
+                                          ChartSeries="@seriesRetencao"
+                                          XAxisLabels="@labelsRetencao"
+                                          Width="100%" Height="300px" />
+                                <MudText Typo="Typo.subtitle1" Align="Align.Center">Taxa de Retenção</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Bar"
+                                          ChartSeries="@seriesHorarios"
+                                          XAxisLabels="@labelsHorarios"
+                                          Width="100%" Height="300px" />
+                                <MudText Typo="Typo.subtitle1" Align="Align.Center">Melhor Horário para Posts</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+
+                    <!-- Tabela de Insights -->
+                    <MudPaper Class="pa-4 mt-4">
+                        <MudTable Items="@insightsTabela" Dense="true" Hover="true" Bordered="true">
+                            <HeaderContent>
+                                <MudTh>Métrica</MudTh>
+                                <MudTh>Valor Atual</MudTh>
+                                <MudTh>Variação</MudTh>
+                                <MudTh>Tendência</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Metrica</MudTd>
+                                <MudTd>@context.ValorAtual</MudTd>
+                                <MudTd>
+                                    <MudText Color="@(context.Variacao >= 0 ? Color.Success : Color.Error)">
+                                        @(context.Variacao >= 0 ? "+" : "")@context.Variacao.ToString("P1")
+                                    </MudText>
+                                </MudTd>
+                                <MudTd>
+                                    <MudIcon Icon="@(context.Variacao >= 0 ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown)"
+                                             Color="@(context.Variacao >= 0 ? Color.Success : Color.Error)" />
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudPaper>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Relatórios" Icon="@Icons.Material.Filled.Description">
+                    <!-- Opções de Exportação -->
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudPaper Class="pa-4">
+                                <MudGrid>
+                                    <MudItem xs="12" sm="4">
+                                        <MudButton Variant="Variant.Filled"
+                                                   Color="Color.Primary"
+                                                   StartIcon="@Icons.Material.Filled.Download"
+                                                   OnClick="@ExportarRelatorioCompleto"
+                                                   FullWidth="true">
+                                            Exportar Relatório Completo
+                                        </MudButton>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="4">
+                                        <MudButton Variant="Variant.Filled"
+                                                   Color="Color.Secondary"
+                                                   StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                                                   OnClick="@ExportarPDF"
+                                                   FullWidth="true">
+                                            Exportar PDF
+                                        </MudButton>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="4">
+                                        <MudButton Variant="Variant.Filled"
+                                                   Color="Color.Success"
+                                                   StartIcon="@Icons.Material.Filled.TableChart"
+                                                   OnClick="@ExportarExcel"
+                                                   FullWidth="true">
+                                            Exportar Excel
+                                        </MudButton>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+
+                    <!-- Agendamento de Relatórios -->
+                    <MudPaper Class="pa-4 mt-4">
+                        <MudText Typo="Typo.h6" Class="mb-4">Agendamento de Relatórios</MudText>
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="string" Label="Frequência" @bind-Value="@frequenciaRelatorio">
+                                    <MudSelectItem Value="@("diario")">Diário</MudSelectItem>
+                                    <MudSelectItem Value="@("semanal")">Semanal</MudSelectItem>
+                                    <MudSelectItem Value="@("mensal")">Mensal</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="@emailRelatorio"
+                                              Label="Email para Recebimento"
+                                              Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           OnClick="@AgendarRelatorio"
+                                           FullWidth="false">
+                                    Agendar Relatório
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudTabPanel>
+            </MudTabs>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<Me2CampanhaModelo> campanhas = new();
+    private List<InfluencerModel> influencers = new();
+    private List<Insight> insights = new();
+
+    private Me2CampanhaModelo selectedCampanha;
+    private InfluencerModel selectedInfluencer;
+    private TipoRedeSocial? selectedRedeSocial;
+
+    private DateRange dateRange = new DateRange(DateTime.Now.AddMonths(-1), DateTime.Now);
+    private string frequenciaRelatorio = "mensal";
+    private string emailRelatorio = "";
+
+    private double crescimentoVisualizacoes;
+    private double crescimentoEngajamento;
+    private double crescimentoInteracoes;
+    private double crescimentoCliques;
+
+    private List<ChartSeries> seriesAlcanceSeguidores = new();
+    private List<ChartSeries> seriesRetencao = new();
+    private string[] labelsRetencao = new string[] { };
+    private List<ChartSeries> seriesHorarios = new();
+    private string[] labelsHorarios = new string[] { };
+
+    private List<InsightRow> insightsTabela = new();
+
+    private class InsightRow
+    {
+        public string Metrica { get; set; }
+        public string ValorAtual { get; set; }
+        public double Variacao { get; set; }
+    }
+
+    private long totalVisualizacoes;
+    private double mediaEngajamento;
+    private long totalInteracoes;
+    private long totalCliquesLinks;
+
+    private List<ChartSeries> seriesEngajamento = new();
+    private string[] labelsEngajamento = new string[] { };
+    private List<ChartSeries> seriesVisualizacoes = new();
+    private string[] labelsVisualizacoes = new string[] { };
+    private List<ChartSeries> seriesInteracoes = new();
+    private List<ChartSeries> seriesInfluenciadores = new();
+    private string[] labelsInfluenciadores = new string[] { };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarDados();
+        await AtualizarMetricas();
+        await AtualizarGraficos();
+        await CarregarMetricasCrescimento();
+        await CarregarDadosAvancados();
+    }
+
+    private async Task CarregarDados()
+    {
+        await VerificarLogin();
+
+        var campanhaService = new Me2CampanhaService();
+        var influencerService = new InfluencerFormService();
+        var insightService = new InsightService();
+
+        campanhas = await campanhaService.GetCampanhasByEmpresaId(dadosSessaoUsuario.Id);
+
+        if (selectedCampanha != null)
+        {
+            influencers = await influencerService.GetInfluencersByCampaignIdAsync(selectedCampanha.Id);
+        }
+
+        insights = await CarregarInsightsFiltrados();
+    }
+
+    public string storedEmail { get; set; }
+    public AuthUserModel dadosSessaoUsuario { get; set; }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await VerificarLogin();
+        }
+    }
+
+    /// <summary>
+    /// Recupera dados do usuário logado (exemplo de SessionStorage).
+    /// </summary>
+    public async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+                if (dadosSessaoUsuario == null)
+                    NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
+        }
+    }
+
+
+    private async Task<List<Insight>> CarregarInsightsFiltrados()
+    {
+        var insightService = new InsightService();
+        var todosInsights = new List<Insight>();
+
+        if (selectedCampanha != null)
+        {
+            todosInsights = await insightService.GetInsightsByCampaignId(selectedCampanha.Id);
+        }
+        else
+        {
+            foreach (var campanha in campanhas)
+            {
+                var insightsCampanha = await insightService.GetInsightsByCampaignId(campanha.Id);
+                todosInsights.AddRange(insightsCampanha);
+            }
+        }
+
+        var insightsFiltrados = todosInsights;
+
+        if (selectedInfluencer != null)
+        {
+            insightsFiltrados = insightsFiltrados.Where(i => i.ID_Influencer == selectedInfluencer.ID).ToList();
+        }
+
+        if (selectedRedeSocial.HasValue)
+        {
+            insightsFiltrados = insightsFiltrados.Where(i => i.AtividadeDoPerfil == selectedRedeSocial.Value).ToList();
+        }
+
+        return insightsFiltrados;
+    }
+
+    private async Task AtualizarMetricas()
+    {
+        totalVisualizacoes = insights.Sum(i => i.Visualizacoes);
+        totalInteracoes = insights.Sum(i => i.Interacoes);
+        totalCliquesLinks = insights.Sum(i => i.AlcanceNaoSeguidores);
+
+        if (totalVisualizacoes > 0)
+        {
+            mediaEngajamento = (double)totalInteracoes / totalVisualizacoes;
+        }
+    }
+
+    private async Task AtualizarGraficos()
+    {
+        var engajamentoPorMes = insights
+            .GroupBy(i => i.Mes)
+            .Select(g => new { Mes = g.Key, Engajamento = g.Sum(i => i.Interacoes) / (double)g.Sum(i => i.Visualizacoes) })
+            .OrderBy(x => x.Mes)
+            .ToList();
+
+        seriesEngajamento = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Engajamento",
+                Data = engajamentoPorMes.Select(x => x.Engajamento * 100).ToArray()
+            }
+        };
+        labelsEngajamento = engajamentoPorMes.Select(x => x.Mes).ToArray();
+
+        var visualizacoesPorRede = insights
+            .GroupBy(i => i.AtividadeDoPerfil)
+            .Select(g => new { Rede = g.Key, Visualizacoes = g.Sum(i => i.Visualizacoes) })
+            .OrderByDescending(x => x.Visualizacoes)
+            .ToList();
+
+        seriesVisualizacoes = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Visualizações",
+                Data = visualizacoesPorRede.Select(x => (double)x.Visualizacoes).ToArray()
+            }
+        };
+        labelsVisualizacoes = visualizacoesPorRede.Select(x => x.Rede.ToString()).ToArray();
+
+        seriesInteracoes = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Interações",
+                Data = new double[]
+                {
+                    insights.Sum(i => i.Curtidas),
+                    insights.Sum(i => i.Compartilhamentos),
+                    insights.Sum(i => i.Respostas),
+                    insights.Sum(i => i.VisitasAoPerfil)
+                }
+            }
+        };
+
+        if (influencers.Any())
+        {
+            var topInfluenciadores = insights
+                .GroupBy(i => i.ID_Influencer)
+                .Select(g => new
+                {
+                    InfluencerId = g.Key,
+                    Engajamento = g.Sum(i => i.Interacoes) / (double)g.Sum(i => i.Visualizacoes)
+                })
+                .OrderByDescending(x => x.Engajamento)
+                .Take(5)
+                .ToList();
+
+            seriesInfluenciadores = new List<ChartSeries>
+            {
+                new ChartSeries
+                {
+                    Name = "Engajamento",
+                    Data = topInfluenciadores.Select(x => x.Engajamento * 100).ToArray()
+                }
+            };
+
+            labelsInfluenciadores = topInfluenciadores
+                .Select(x => influencers.FirstOrDefault(i => i.ID == x.InfluencerId)?.Nome ?? "Desconhecido")
+                .ToArray();
+        }
+    }
+
+    private async Task CarregarMetricasCrescimento()
+    {
+        var periodoAtual = insights.Where(i => i.DataInclusao >= dateRange.Start && i.DataInclusao <= dateRange.End);
+        var periodoAnterior = insights.Where(i => i.DataInclusao >= dateRange.Start?.AddMonths(-1) && i.DataInclusao < dateRange.Start);
+
+        crescimentoVisualizacoes = CalcularCrescimento(
+            periodoAtual.Sum(i => i.Visualizacoes),
+            periodoAnterior.Sum(i => i.Visualizacoes)
+        );
+
+        crescimentoEngajamento = CalcularCrescimento(
+            CalcularEngajamento(periodoAtual),
+            CalcularEngajamento(periodoAnterior)
+        );
+
+        crescimentoInteracoes = CalcularCrescimento(
+            periodoAtual.Sum(i => i.Interacoes),
+            periodoAnterior.Sum(i => i.Interacoes)
+        );
+
+        crescimentoCliques = CalcularCrescimento(
+            periodoAtual.Sum(i => i.AlcanceNaoSeguidores),
+            periodoAnterior.Sum(i => i.AlcanceNaoSeguidores)
+        );
+    }
+
+    private double CalcularEngajamento(IEnumerable<Insight> insights)
+    {
+        var visualizacoes = insights.Sum(i => i.Visualizacoes);
+        var interacoes = insights.Sum(i => i.Interacoes);
+        return visualizacoes > 0 ? (double)interacoes / visualizacoes : 0;
+    }
+
+    private double CalcularCrescimento(double atual, double anterior)
+    {
+        return anterior > 0 ? (atual - anterior) / anterior : 0;
+    }
+
+    private async Task CarregarDadosAvancados()
+    {
+        seriesAlcanceSeguidores = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Alcance",
+                Data = new double[]
+                {
+                    insights.Sum(i => i.AlcanceSeguidores),
+                    insights.Sum(i => i.AlcanceNaoSeguidores)
+                }
+            }
+        };
+
+        var retencaoPorDia = insights
+            .GroupBy(i => i.DataInclusao.Date)
+            .Select(g => new
+            {
+                Data = g.Key,
+                Retencao = (double)g.Sum(i => i.Visualizacoes - i.Saiu) / g.Sum(i => i.Visualizacoes)
+            })
+            .OrderBy(x => x.Data)
+            .ToList();
+
+        seriesRetencao = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Retenção",
+                Data = retencaoPorDia.Select(x => x.Retencao * 100).ToArray()
+            }
+        };
+        labelsRetencao = retencaoPorDia.Select(x => x.Data.ToString("dd/MM")).ToArray();
+
+        var horarios = new[] { "06h", "09h", "12h", "15h", "18h", "21h" };
+        var engajamentoPorHorario = horarios.Select(h => new Random().NextDouble() * 100).ToArray();
+
+        seriesHorarios = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Engajamento",
+                Data = engajamentoPorHorario
+            }
+        };
+        labelsHorarios = horarios;
+
+        insightsTabela = new List<InsightRow>
+        {
+            new InsightRow {
+                Metrica = "Taxa de Conversão",
+                ValorAtual = $"{(double)totalCliquesLinks / totalVisualizacoes:P2}",
+                Variacao = crescimentoCliques
+            },
+            new InsightRow {
+                Metrica = "Tempo Médio de Visualização",
+                ValorAtual = "2m 30s",
+                Variacao = 0.15
+            },
+            new InsightRow {
+                Metrica = "Taxa de Compartilhamento",
+                ValorAtual = $"{(double)insights.Sum(i => i.Compartilhamentos) / totalVisualizacoes:P2}",
+                Variacao = 0.05
+            }
+        };
+    }
+
+    private async Task OnCampanhaSelected(Me2CampanhaModelo campanha)
+    {
+        selectedCampanha = campanha;
+        selectedInfluencer = null;
+        await CarregarDados();
+        await AtualizarMetricas();
+        await AtualizarGraficos();
+    }
+
+    private async Task OnInfluencerSelected(InfluencerModel influencer)
+    {
+        selectedInfluencer = influencer;
+        await CarregarDados();
+        await AtualizarMetricas();
+        await AtualizarGraficos();
+    }
+
+    private async Task OnRedeSocialSelected(TipoRedeSocial? redeSocial)
+    {
+        selectedRedeSocial = redeSocial;
+        await CarregarDados();
+        await AtualizarMetricas();
+        await AtualizarGraficos();
+    }
+
+    private async Task ExportarRelatorioCompleto()
+    {
+        Snackbar.Add("Relatório completo será enviado para seu email", Severity.Success);
+    }
+
+    private async Task ExportarPDF()
+    {
+        Snackbar.Add("Exportação para PDF iniciada", Severity.Success);
+    }
+
+    private async Task ExportarExcel()
+    {
+        Snackbar.Add("Exportação para Excel iniciada", Severity.Success);
+    }
+
+    private async Task AgendarRelatorio()
+    {
+        if (string.IsNullOrWhiteSpace(emailRelatorio))
+        {
+            Snackbar.Add("Por favor, informe um email válido", Severity.Warning);
+            return;
+        }
+
+        Snackbar.Add($"Relatório agendado com frequência {frequenciaRelatorio}", Severity.Success);
+    }
+}

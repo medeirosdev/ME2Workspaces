@@ -1,0 +1,56 @@
+﻿@page "/ia"
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="d-flex justify-center align-center" Style="height: 100vh; background: linear-gradient(135deg, #6a11cb, #2575fc);">
+    <MudPaper Elevation="4" Class="p-5" Style="width: 100%; max-width: 500px; text-align: center; color: white; border-radius: 12px;">
+        <MudText Typo="Typo.h3" GutterBottom="true" FontWeight="FontWeight.Bold">
+            ME2 IA
+        </MudText>
+        <MudText Typo="Typo.body1" GutterBottom="true">
+            A IA da ME2 pronta para trazer valor para sua empresa.
+        </MudText>
+
+        <!-- Campo de Busca -->
+        <MudTextField Label="Digite sua pergunta..." FullWidth="true" Variant="Variant.Filled" Margin="Margin.Normal" @bind-Value="pergunta" />
+
+        <!-- Botão de Busca -->
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" OnClick="BuscarPergunta">
+            Buscar
+        </MudButton>
+
+        <!-- Resposta da IA -->
+        @if (!string.IsNullOrEmpty(respostaIA))
+        {
+            <MudCard Class="mt-4">
+                <MudCardContent>
+                    <MudText Typo="Typo.body2" Color="Color.Inherit">
+                        @respostaIA
+                    </MudText>
+                </MudCardContent>
+            </MudCard>
+        }
+
+        <!-- Rodapé -->
+        <MudDivider Class="mt-5" />
+        <MudText Typo="Typo.caption" Color="Color.Inherit">
+            Desenvolvido por <MudLink Href="#" Color="Color.Primary">ME2 Tecnologia</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string pergunta = string.Empty;  // Armazena a pergunta do usuário
+    private string respostaIA = string.Empty;  // Armazena a resposta da IA
+
+    // Função chamada quando o usuário clica no botão "Buscar"
+    private async Task BuscarPergunta()
+    {
+        if (!string.IsNullOrEmpty(pergunta))
+        {
+            // Chama o serviço da IA
+            respostaIA = await ME2IAService.PerguntarIA(pergunta);
+
+            // Limpa o campo de entrada para nova pergunta
+            pergunta = string.Empty;
+        }
+    }
+}

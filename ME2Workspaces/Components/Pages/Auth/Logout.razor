@@ -1,0 +1,10 @@
+﻿@rendermode InteractiveServer
+@inject AuthenticationService AuthService
+@page "/logout"
+@inject NavigationManager NavigationManager
+@functions {
+    public async Task OnGetAsync()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

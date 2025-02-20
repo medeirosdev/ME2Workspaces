@@ -1,0 +1,19 @@
+﻿@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+@using ME2Workspaces
+@using ME2Workspaces.Client
+@using ME2Workspaces.Components
+@using MudBlazor.Services;
+@using MudBlazor;
+@using Me2Workspaces.ModulosME2.DBUser;
+@using static Me2Workspaces.ModulosME2.DBUser.UserService
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@inject IDialogService MudDialogService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime

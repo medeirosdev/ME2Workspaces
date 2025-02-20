@@ -1,0 +1,287 @@
+﻿@page "/me2trackcampanha"
+@using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores
+@using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores.AnalisesInsight
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@inject IDialogService MudDialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<MudDialog Style="width: 100%; height: 100%; max-width: 1200px; padding: 30px;">
+    <TitleContent>
+        <MudText Typo="Typo.h5">Me2 Track da campanha @campanhaNome</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudPaper Elevation="0" Class="pa-4">
+            <MudStack Spacing="4">
+                <!-- Action Buttons -->
+                <MudPaper Elevation="0" Class="d-flex gap-2">
+                    <MudButton StartIcon="@Icons.Material.Filled.BarChart"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="AbrirGraficosME2Track">
+                        Gráficos da ME2 Track
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Add"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               OnClick="AdicionarInsight">
+                        Novo Insight
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Edit"
+                               Variant="Variant.Outlined"
+                               Color="Color.Secondary"
+                               OnClick="AlterarInsight"
+                               Disabled="!CanAlterInsight">
+                        Editar Insight
+                    </MudButton>
+                </MudPaper>
+
+                <!-- Insights DataGrid -->
+                <MudDataGrid T="Insight"
+                             Items="@insights"
+                             Filterable="true"
+                             SortMode="@SortMode.Multiple"
+                             Groupable="true"
+                             Dense="true"
+                             Hover="true"
+                             SelectedItem="@selectedInsight"
+                             SelectedItemChanged="@OnSelectedInsightChanged"
+                             MultiSelection="true"
+                             Class="elevation-1">
+                    <Columns>
+                        <PropertyColumn Property="x => x.UsernameInfluencer"
+                                        Title="Influenciador"
+                                        Sortable="true"
+                                        Filterable="true" />
+
+                        <PropertyColumn Property="x => x.AtividadeDoPerfil"
+                                        Title="Rede Social"
+                                        Sortable="true" />
+
+                        <PropertyColumn Property="x => x.TipoInsight"
+                                        Title="Tipo Entrega"
+                                        Sortable="true" />
+
+                        <PropertyColumn Property="x => x.DataInclusao"
+                                        Title="Cronograma"
+                                        Format="dd/MM/yyyy"
+                                        Sortable="true" />
+
+                        <PropertyColumn Property="x => x.Visualizacoes"
+                                        Title="Visualizações"
+                                        Sortable="true"
+                                        Format="#,##0" />
+
+                        <PropertyColumn Property="x => (x.Interacoes/x.Visualizacoes)"
+                                        Title="Engajamento"
+                                        Format="P2"
+                                        Sortable="true" />
+
+                        <PropertyColumn Property="x => x.AlcanceSeguidores"
+                                        Title="Acessos via Figura"
+                                        Format="#,##0"
+                                        Sortable="true" />
+
+                        <PropertyColumn Property="x => x.AlcanceNaoSeguidores"
+                                        Title="Acessos via Link"
+                                        Format="#,##0"
+                                        Sortable="true" />
+
+                        <PropertyColumn Property="x => (x.AlcanceNaoSeguidores/x.Visualizacoes)"
+                                        Title="Taxa de Cliques"
+                                        Format="P2"
+                                        Sortable="true" />
+                    </Columns>
+                    <PagerContent>
+                        <MudDataGridPager T="Insight" />
+                    </PagerContent>
+                </MudDataGrid>
+            </MudStack>
+        </MudPaper>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Fechar"
+                   StartIcon="@Icons.Material.Filled.Close"
+                   Color="Color.Default">
+            Fechar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public long IDCampanha { get; set; }
+    [Parameter] public long ID_Usuario { get; set; }
+
+    private List<Insight> insights = new();
+    private Insight? selectedInsight;
+    private string campanhaNome = string.Empty;
+
+    private bool CanAlterInsight => selectedInsight is not null;
+
+    private readonly InsightService _insightService = new();
+    private readonly InfluencerFormService _influencerService = new();
+    private readonly Me2CampanhaService _campanhaService = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(
+            CarregarInsights(),
+            CarregarInformacoesCampanha()
+        );
+    }
+
+    private async Task CarregarInsights()
+    {
+        try
+        {
+            insights = await _insightService.GetInsightsByCampaignId(IDCampanha);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao carregar insights: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CarregarInformacoesCampanha()
+    {
+        try
+        {
+            var campanha = await _campanhaService.GetCampanhaById(IDCampanha);
+            campanhaNome = campanha?.NomeCampanha ?? "Não encontrada";
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao carregar informações da campanha: {ex.Message}", Severity.Error);
+            campanhaNome = "Erro ao carregar";
+        }
+    }
+
+    private void OnSelectedInsightChanged(Insight insight)
+    {
+        selectedInsight = insight;
+        StateHasChanged();
+    }
+
+    private async Task AdicionarInsight()
+    {
+        var parameters = new DialogParameters
+            {
+                ["novoItem"] = true,
+                ["IDCampanha"] = IDCampanha,
+                ["ID_Usuario"] = ID_Usuario
+            };
+
+        var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true
+            };
+
+        var dialog = await MudDialogService.ShowAsync<InsightAlterarDialog>(
+            "Novo Insight",
+            parameters,
+            options
+        );
+
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await CarregarInsights();
+            Snackbar.Add("Insight criado com sucesso!", Severity.Success);
+        }
+    }
+
+    private async Task AlterarInsight()
+    {
+        if (selectedInsight is null)
+        {
+            Snackbar.Add("Selecione um insight para editar", Severity.Warning);
+            return;
+        }
+
+        var parameters = new DialogParameters
+            {
+                ["novoItem"] = false,
+                ["IDCampanha"] = IDCampanha,
+                ["ID_Usuario"] = ID_Usuario,
+                ["insightId"] = selectedInsight.Id
+            };
+
+        var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true
+            };
+
+        var dialog = await MudDialogService.ShowAsync<InsightAlterarDialog>(
+            "Editar Insight",
+            parameters,
+            options
+        );
+
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await CarregarInsights();
+            Snackbar.Add("Insight atualizado com sucesso!", Severity.Success);
+        }
+    }
+
+    private async Task AbrirGraficosME2Track()
+    {
+        var parameters = new DialogParameters
+            {
+                ["IDCampanha"] = IDCampanha,
+                ["ID_Usuario"] = ID_Usuario
+            };
+
+        var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.ExtraLarge,
+                FullWidth = true,
+                CloseOnEscapeKey = true
+            };
+
+        await MudDialogService.ShowAsync<InsightsGraficos>(
+            "Análise de Performance ME2 Track",
+            parameters,
+            options
+        );
+    }
+
+    private void Fechar() => MudDialog.Cancel();
+}
+
+<style>
+    .mud-dialog {
+        border-radius: 12px;
+    }
+
+    .mud-dialog-content {
+        padding: 0 !important;
+    }
+
+    .mud-table {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .mud-table-head th {
+        background-color: var(--mud-palette-background-grey);
+        color: var(--mud-palette-text-primary);
+        font-weight: 600;
+    }
+
+    .mud-table-row:hover {
+        background-color: var(--mud-palette-background-grey);
+    }
+</style>

@@ -1,0 +1,82 @@
+﻿@page "/campanha/conclusao"
+@using MudBlazor
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-6">
+    <MudPaper Elevation="3" Class="pa-8">
+        <MudGrid Justify="Justify.Center" Class="mb-8">
+            <MudItem>
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+            </MudItem>
+        </MudGrid>
+
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">Campanha criada com sucesso!</MudText>
+        
+        <MudDivider Class="my-6"/>
+        
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCard Elevation="0" Class="rounded-lg">
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.subtitle1" Color="Color.Primary">Nome da Campanha</MudText>
+                                <MudText Typo="Typo.h6" Class="mt-1">@NomeCampanha</MudText>
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.subtitle1" Color="Color.Primary">Influenciadores</MudText>
+                                <MudText Typo="Typo.h6" Class="mt-1">@NumeroInfluenciadores influenciador(es)</MudText>
+                            </MudItem>
+                            
+                            <MudItem xs="12" Class="mt-4">
+                                <MudText Typo="Typo.subtitle1" Color="Color.Primary">Status</MudText>
+                                <MudChip T="string" Color="Color.Success" Size="Size.Medium" Class="mt-1">
+                                    Pronta para iniciar
+                                </MudChip>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider Class="my-6"/>
+
+        <MudGrid Justify="Justify.Center" Class="mt-8">
+            <MudItem xs="12" md="6" Class="d-flex justify-center">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          Size="Size.Large" 
+                          FullWidth="true"
+                          OnClick="@(() => NavigateToGerenciamento())">
+                    Ir para Gerenciamento
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-center">
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Primary" 
+                          Size="Size.Large" 
+                          FullWidth="true"
+                          OnClick="@(() => CriarNovaCampanha())">
+                    Criar Nova Campanha
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public string NomeCampanha { get; set; } = "Black Friday 2024";
+
+    [Parameter]
+    public int NumeroInfluenciadores { get; set; } = 5;
+
+    private void NavigateToGerenciamento()
+    {
+    }
+
+    private void CriarNovaCampanha()
+    {
+    }
+}

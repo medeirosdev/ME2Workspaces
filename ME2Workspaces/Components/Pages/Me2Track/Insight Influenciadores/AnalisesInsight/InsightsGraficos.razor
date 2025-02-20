@@ -1,0 +1,374 @@
+﻿@rendermode InteractiveServer
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@inject IDialogService MudDialogService
+@inject ISnackbar Snackbar
+
+<MudDialog Style="width: 1000px; height: 1000px; padding:30px;">
+    <TitleContent>
+        Análise dos Insights – Gráficos
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="4">
+            <!-- Título com os nomes -->
+            <MudText Typo="Typo.h6">
+                Insights de @influencerNome da campanha @campanhaNome
+            </MudText>
+            @if(labels.Length > 0)
+            {
+                <MudText>
+                    Período: @labels.First() - @labels.Last()
+                </MudText>
+            }
+            else
+            {
+                <MudText>Nenhum insight encontrado para o período informado.</MudText>
+            }
+
+            <!-- Grid de gráficos: cada gráfico exibe uma métrica diferente -->
+            <MudGrid Gutter="16">
+                <!-- Curtidas -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Curtidas</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@curtidasChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Respostas -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Respostas</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@respostasChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Compartilhamentos -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Compartilhamentos</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@compartilhamentosChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Visualizações -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Visualizações</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@visualizacoesChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Interações -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Interações</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@interacoesChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Visitas ao Perfil -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Visitas ao Perfil</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@visitasAoPerfilChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Novos Seguidores -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Novos Seguidores</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@novosSeguidoresChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Contas Alcançadas -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Contas Alcançadas</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@contasAlcancadasChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Contas com Engajamento -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Contas com Engajamento</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@contasComEngajamentoChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Atividade do Perfil -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Atividade do Perfil</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@atividadeDoPerfilChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Alcance de Seguidores -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Alcance de Seguidores</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@alcanceSeguidoresChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+                <!-- Alcance de Não Seguidores -->
+                <MudItem xs="12" sm="6">
+                    <MudPaper Class="pa-4">
+                        <MudText Typo="Typo.subtitle1">Alcance de Não Seguidores</MudText>
+                        <MudChart ChartType="ChartType.Line" 
+                                  ChartSeries="@alcanceNaoSeguidoresChartSeries" 
+                                  XAxisLabels="@labels" 
+                                  Width="100%" 
+                                  Height="350px" 
+                                  ChartOptions="@Options" />
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Fechar" Color="Color.Default">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public long ID_Influencer { get; set; }
+    [Parameter] public long IDCampanha { get; set; }
+    [Parameter] public long ID_Usuario { get; set; }
+
+    private List<Insight> insights = new List<Insight>();
+
+    // Variáveis para armazenar os nomes
+    private string influencerNome = "";
+    private string campanhaNome = "";
+
+    // Arrays para os dados dos gráficos
+    private string[] labels = Array.Empty<string>();
+    private double[] curtidasSeries = Array.Empty<double>();
+    private double[] respostasSeries = Array.Empty<double>();
+    private double[] compartilhamentosSeries = Array.Empty<double>();
+    private double[] visualizacoesSeries = Array.Empty<double>();
+    private double[] interacoesSeries = Array.Empty<double>();
+    private double[] visitasAoPerfilSeries = Array.Empty<double>();
+    private double[] novosSeguidoresSeries = Array.Empty<double>();
+    private double[] contasAlcancadasSeries = Array.Empty<double>();
+    private double[] contasComEngajamentoSeries = Array.Empty<double>();
+    private double[] atividadeDoPerfilSeries = Array.Empty<double>();
+    private double[] alcanceSeguidoresSeries = Array.Empty<double>();
+    private double[] alcanceNaoSeguidoresSeries = Array.Empty<double>();
+
+    // ChartSeries lists para cada métrica
+    private List<ChartSeries> curtidasChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> respostasChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> compartilhamentosChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> visualizacoesChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> interacoesChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> visitasAoPerfilChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> novosSeguidoresChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> contasAlcancadasChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> contasComEngajamentoChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> atividadeDoPerfilChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> alcanceSeguidoresChartSeries = new List<ChartSeries>();
+    private List<ChartSeries> alcanceNaoSeguidoresChartSeries = new List<ChartSeries>();
+
+    // Chart options (configuração padrão, pode ser ajustada)
+    public ChartOptions Options = new ChartOptions() { LineStrokeWidth = 2 };
+
+    // Instância do serviço para carregar os insights.
+    private readonly InsightService insightService = new InsightService();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarInsights();
+        await CarregarInformacoes();
+        ProcessarDadosGrafico();
+    }
+
+    private async Task CarregarInsights()
+    {
+        // Utiliza o método GetInsightsByParams para obter insights com base em ID_Influencer e IDCampanha
+        insights = (await insightService.GetInsightsByParams(ID_Influencer, IDCampanha))
+                    .OrderBy(i => i.DataInclusao)
+                    .ToList();
+    }
+
+    private async Task CarregarInformacoes()
+    {
+        // Obtém os dados do influenciador
+        var influencerService = new InfluencerFormService();
+        var influencer = await influencerService.GetInfluencerByIdAsync(ID_Influencer);
+        if (influencer != null)
+        {
+            influencerNome = influencer.Nome;
+        }
+
+        // Obtém os dados da campanha
+        var campanhaService = new Me2CampanhaService();
+        var campanha = await campanhaService.GetCampanhaById(IDCampanha);
+        if (campanha != null)
+        {
+            campanhaNome = campanha.NomeCampanha;
+        }
+        StateHasChanged();
+    }
+
+    private void ProcessarDadosGrafico()
+    {
+        if (insights == null || insights.Count == 0)
+        {
+            labels = Array.Empty<string>();
+            curtidasSeries = Array.Empty<double>();
+            respostasSeries = Array.Empty<double>();
+            compartilhamentosSeries = Array.Empty<double>();
+            visualizacoesSeries = Array.Empty<double>();
+            interacoesSeries = Array.Empty<double>();
+            visitasAoPerfilSeries = Array.Empty<double>();
+            novosSeguidoresSeries = Array.Empty<double>();
+            contasAlcancadasSeries = Array.Empty<double>();
+            contasComEngajamentoSeries = Array.Empty<double>();
+            atividadeDoPerfilSeries = Array.Empty<double>();
+            alcanceSeguidoresSeries = Array.Empty<double>();
+            alcanceNaoSeguidoresSeries = Array.Empty<double>();
+
+            curtidasChartSeries.Clear();
+            respostasChartSeries.Clear();
+            compartilhamentosChartSeries.Clear();
+            visualizacoesChartSeries.Clear();
+            interacoesChartSeries.Clear();
+            visitasAoPerfilChartSeries.Clear();
+            novosSeguidoresChartSeries.Clear();
+            contasAlcancadasChartSeries.Clear();
+            contasComEngajamentoChartSeries.Clear();
+            atividadeDoPerfilChartSeries.Clear();
+            alcanceSeguidoresChartSeries.Clear();
+            alcanceNaoSeguidoresChartSeries.Clear();
+            return;
+        }
+
+        // Define os labels a partir da DataInclusao de cada insight (formatados como "dd/MM")
+        labels = insights.Select(i => i.DataInclusao.ToString("dd/MM")).ToArray();
+
+        // Preenche os vetores de dados para cada métrica
+        curtidasSeries = insights.Select(i => (double)i.Curtidas).ToArray();
+        respostasSeries = insights.Select(i => (double)i.Respostas).ToArray();
+        compartilhamentosSeries = insights.Select(i => (double)i.Compartilhamentos).ToArray();
+        visualizacoesSeries = insights.Select(i => (double)i.Visualizacoes).ToArray();
+        interacoesSeries = insights.Select(i => (double)i.Interacoes).ToArray();
+        visitasAoPerfilSeries = insights.Select(i => (double)i.VisitasAoPerfil).ToArray();
+        novosSeguidoresSeries = insights.Select(i => (double)i.ComecaramASeguir).ToArray();
+        contasAlcancadasSeries = insights.Select(i => (double)i.ContasAlcancadas).ToArray();
+        contasComEngajamentoSeries = insights.Select(i => (double)i.ContasComEngajamento).ToArray();
+        atividadeDoPerfilSeries = insights.Select(i => (double)i.AtividadeDoPerfil).ToArray();
+        alcanceSeguidoresSeries = insights.Select(i => (double)i.AlcanceSeguidores).ToArray();
+        alcanceNaoSeguidoresSeries = insights.Select(i => (double)i.AlcanceNaoSeguidores).ToArray();
+
+        // Cria ChartSeries para cada métrica
+        curtidasChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Curtidas", Data = curtidasSeries }
+        };
+        respostasChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Respostas", Data = respostasSeries }
+        };
+        compartilhamentosChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Compartilhamentos", Data = compartilhamentosSeries }
+        };
+        visualizacoesChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Visualizações", Data = visualizacoesSeries }
+        };
+        interacoesChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Interações", Data = interacoesSeries }
+        };
+        visitasAoPerfilChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Visitas ao Perfil", Data = visitasAoPerfilSeries }
+        };
+        novosSeguidoresChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Novos Seguidores", Data = novosSeguidoresSeries }
+        };
+        contasAlcancadasChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Contas Alcançadas", Data = contasAlcancadasSeries }
+        };
+        contasComEngajamentoChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Contas com Engajamento", Data = contasComEngajamentoSeries }
+        };
+        atividadeDoPerfilChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Atividade do Perfil", Data = atividadeDoPerfilSeries }
+        };
+        alcanceSeguidoresChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Alcance de Seguidores", Data = alcanceSeguidoresSeries }
+        };
+        alcanceNaoSeguidoresChartSeries = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Alcance de Não Seguidores", Data = alcanceNaoSeguidoresSeries }
+        };
+
+        StateHasChanged();
+    }
+
+    private void Fechar()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

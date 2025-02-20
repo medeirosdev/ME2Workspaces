@@ -1,0 +1,562 @@
+﻿@rendermode InteractiveServer
+@page "/campanhas"
+
+@using ME2Workspaces.Components.Pages.Me2Track.Influenciadores
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@inject ISnackbar Snackbar
+<MudContainer Class="mt-4">
+    <!-- Dashboard Section -->
+    <MudGrid>
+        <!-- Campaign Stats -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="dashboard-card">
+                <MudIcon Icon="@Icons.Material.Filled.Campaign" Color="Color.Primary" Class="dashboard-icon" />
+                <div class="dashboard-content">
+                    <MudText Typo="Typo.h3" Color="Color.Primary">@campanhas.Count</MudText>
+                    <MudText>Campanhas Ativas</MudText>
+                    <MudText Typo="Typo.caption">Média mensal: @(campanhas.Count > 0 ? "6" : "0") campanhas</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Insights Stats -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="dashboard-card">
+                <MudIcon Icon="@Icons.Material.Filled.Analytics" Color="Color.Secondary" Class="dashboard-icon" />
+                <div class="dashboard-content">
+                    <MudText Typo="Typo.h3" Color="Color.Secondary">@totalInsights</MudText>
+                    <MudText>Insights Recebidos</MudText>
+                    <MudText Typo="Typo.caption">Média por campanha: @mediaInsightsPorCampanha</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Active Influencers -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="dashboard-card">
+                <MudIcon Icon="@Icons.Material.Filled.Group" Color="Color.Info" Class="dashboard-icon" />
+                <div class="dashboard-content">
+                    <MudText Typo="Typo.h3" Color="Color.Info">@totalInfluencers</MudText>
+                    <MudText>Influencers Ativos</MudText>
+                    <MudText Typo="Typo.caption">Média por campanha: @mediaInfluencersPorCampanha</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Engagement Rate -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Elevation="2" Class="dashboard-card">
+                <MudIcon Icon="@Icons.Material.Filled.Favorite" Color="Color.Error" Class="dashboard-icon" />
+                <div class="dashboard-content">
+                    <MudText Typo="Typo.h3" Color="Color.Error">@engagementRate%</MudText>
+                    <MudText>Taxa de Engajamento</MudText>
+                    <MudText Typo="Typo.caption">Média geral das campanhas</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Campaign List Section -->
+    <MudPaper Elevation="2" Class="pa-4 mt-4">
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.h6">Lista de Campanhas</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="6" Class="d-flex justify-end">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="@CreateCampanha"
+                           Class="mr-2">
+                    Nova Campanha
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Edit"
+                           OnClick="@EditCampanha"
+                           Disabled="@(selectedCampanha == null)">
+                    Editar
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        <MudDataGrid T="Me2CampanhaModelo"
+                     Items="@campanhas"
+                     Filterable="true"
+                     SortMode="@SortMode.Multiple"
+                     Groupable="true"
+                     SelectedItem="@selectedCampanha"
+                     SelectedItemChanged="@OnSelectedItemChanged"
+                     MultiSelection="false"
+                     Class="mt-4">
+            <Columns>
+                <PropertyColumn Property="x => x.NomeCampanha" Title="Nome da Campanha" />
+                <PropertyColumn Property="x => x.DataInicio" Title="Data Início" Format="d" />
+                <PropertyColumn Property="x => x.DataTermino" Title="Data Término" Format="d" />
+                <PropertyColumn Property="x => x.TotalInvestimento" Title="Investimento" Format="C" />
+                <PropertyColumn Property="x => x.DescricaoCampanha" Title="Descrição" />
+                <TemplateColumn Title="Ações" CellClass="d-flex justify-end align-center">
+                    <CellTemplate Context="ctx">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Class="mr-2"
+                                   OnClick="@(() => OnDeleteClick(ctx.Item))">
+                            Excluir
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Visibility"
+                                   Size="Size.Small"
+                                   OnClick="@(() => EditCampanhaGRID(ctx.Item))">
+                            Detalhes
+                        </MudButton>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </MudPaper>
+
+    <!-- Charts Section -->
+    <MudGrid Class="mt-6">
+        <!-- Insights Growth Chart -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">Crescimento de Insights por Campanha</MudText>
+                <MudChart ChartType="ChartType.Line"
+                          ChartSeries="@insightsSeries"
+                          XAxisLabels="@insightsLabels"
+                          Width="100%"
+                          Height="300px">
+                </MudChart>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Engagement Distribution Chart -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">Distribuição de Engajamento</MudText>
+                <MudChart ChartType="ChartType.Bar"
+                          ChartSeries="@engagementSeries"
+                          XAxisLabels="@engagementLabels"
+                          Width="100%"
+                          Height="300px">
+                </MudChart>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Top Influencers Chart -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">Top Influenciadores por Engajamento</MudText>
+                <MudChart ChartType="ChartType.Bar"
+                          ChartSeries="@topInfluencersSeries"
+                          XAxisLabels="@topInfluencersLabels"
+                          Width="100%"
+                          Height="300px">
+                </MudChart>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<Me2CampanhaModelo> campanhas = new();
+    private Me2CampanhaModelo selectedCampanha;
+    private List<InfluencerModel> topInfluencers = new();
+    private int totalInsights;
+    private int totalInfluencers;
+    private decimal engagementRate;
+    private decimal mediaInsightsPorCampanha;
+    private decimal mediaInfluencersPorCampanha;
+    public string storedEmail { get; set; }
+    public AuthUserModel dadosSessaoUsuario { get; set; }
+
+    // Chart Data
+    private List<ChartSeries> insightsSeries = new();
+    private string[] insightsLabels = Array.Empty<string>();
+    private List<ChartSeries> engagementSeries = new();
+    private string[] engagementLabels = Array.Empty<string>();
+    private List<ChartSeries> topInfluencersSeries = new();
+    private string[] topInfluencersLabels = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+        await InitializeChartData();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await VerificarLogin();
+            await CarregarCampanhas();
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        await VerificarLogin();
+        await CarregarCampanhas();
+        await CarregarTopInfluencers();
+        await CalcularEstatisticas();
+    }
+
+    private async Task InitializeChartData()
+    {
+        await InitializeInsightsChart();
+        await InitializeEngagementChart();
+        await InitializeTopInfluencersChart();
+    }
+
+    private async Task CarregarCampanhas()
+    {
+        if (dadosSessaoUsuario == null)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        var campanhaService = new Me2CampanhaService();
+        campanhas = await campanhaService.GetCampanhasByEmpresaId(dadosSessaoUsuario.Id)
+                    ?? new List<Me2CampanhaModelo>();
+
+        StateHasChanged();
+    }
+
+    public async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                var userService = new UserService();
+                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+                if (dadosSessaoUsuario == null)
+                    NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
+        }
+    }
+
+    private async Task CarregarTopInfluencers()
+    {
+        if (dadosSessaoUsuario == null) return;
+
+        var influencerService = new InfluencerFormService();
+        var allInfluencers = await influencerService.GetAllInfluencersAsync();
+        topInfluencers = allInfluencers
+            .OrderByDescending(i => GetInfluencerEngagement(i))
+            .Take(3)
+            .ToList();
+    }
+
+    private async Task CalcularEstatisticas()
+    {
+        if (dadosSessaoUsuario == null) return;
+
+        var influencerService = new InfluencerFormService();
+        totalInfluencers = await influencerService.ObterNumeroInfluencers(dadosSessaoUsuario.Id);
+
+        if (campanhas.Count > 0)
+        {
+            mediaInfluencersPorCampanha = Math.Round((decimal)totalInfluencers / campanhas.Count, 1);
+            mediaInsightsPorCampanha = Math.Round((decimal)totalInsights / campanhas.Count, 1);
+        }
+
+        engagementRate = await CalcularEngagementRateGeral();
+    }
+
+    private async Task<decimal> CalcularEngagementRateGeral()
+    {
+        var insightService = new InsightService();
+        var insights = await insightService.GetInsightsByUserId(dadosSessaoUsuario.Id);
+        if (!insights.Any()) return 0;
+
+        var totalInteracoes = insights.Sum(i => i.Interacoes);
+        var totalVisualizacoes = insights.Sum(i => i.Visualizacoes);
+
+        return totalVisualizacoes > 0
+            ? Math.Round((decimal)totalInteracoes / totalVisualizacoes * 100, 1)
+            : 0;
+    }
+
+    private decimal GetInfluencerEngagement(InfluencerModel influencer)
+    {
+        return new Random().Next(1, 10);
+    }
+
+    private async Task InitializeInsightsChart()
+    {
+        var insightService = new InsightService();
+        var insights = await insightService.GetInsightsByUserId(dadosSessaoUsuario?.Id ?? 0);
+
+        if (insights?.Any() != true)
+        {
+            return;
+        }
+
+        // Group insights by campaign and order by date
+        var insightsByCampaign = insights
+            .GroupBy(i => i.ID_Campanha)
+            .ToList();
+
+        var insightData = new List<double>();
+        var labels = new List<string>();
+
+        foreach (var campaign in campanhas.OrderBy(c => c.DataInicio))
+        {
+            var campaignInsights = insightsByCampaign
+                .FirstOrDefault(g => g.Key == campaign.Id);
+
+            insightData.Add(campaignInsights?.Count() ?? 0);
+            labels.Add(campaign.NomeCampanha);
+        }
+
+        insightsSeries = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Insights",
+                Data = insightData.ToArray()
+            }
+        };
+        insightsLabels = labels.ToArray();
+    }
+
+    private async Task InitializeEngagementChart()
+    {
+        var engagementRanges = new[] { "0-2%", "2-5%", "5-10%", ">10%" };
+        var engagementCounts = new double[4];
+
+        foreach (var influencer in topInfluencers)
+        {
+            var engagement = GetInfluencerEngagement(influencer);
+            if (engagement <= 2) engagementCounts[0]++;
+            else if (engagement <= 5) engagementCounts[1]++;
+            else if (engagement <= 10) engagementCounts[2]++;
+            else engagementCounts[3]++;
+        }
+
+        engagementSeries = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Distribuição de Engajamento",
+                Data = engagementCounts
+            }
+        };
+        engagementLabels = engagementRanges;
+    }
+
+    private async Task InitializeTopInfluencersChart()
+    {
+        if (topInfluencers?.Any() != true)
+        {
+            return;
+        }
+
+        var topInfluencerData = topInfluencers
+            .Take(5)
+            .Select(i => (double)GetInfluencerEngagement(i))
+            .ToArray();
+
+        var labels = topInfluencers
+            .Take(5)
+            .Select(i => i.Nome)
+            .ToArray();
+
+        topInfluencersSeries = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Taxa de Engajamento",
+                Data = topInfluencerData
+            }
+        };
+        topInfluencersLabels = labels;
+    }
+
+    private string GetCampaignStatus(Me2CampanhaModelo campanha)
+    {
+        var hoje = DateTime.Now;
+        if (campanha.DataInicio > hoje) return "Pendente";
+        if (campanha.DataTermino < hoje) return "Encerrada";
+        return "Ativa";
+    }
+
+    private async Task CreateCampanha()
+    {
+        dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+
+        var parameters = new DialogParameters<CampanhaCreateDialog>
+        {
+            { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
+            { x => x.novoItem, true }
+        };
+
+        var dialog = await MudDialogService.ShowAsync<CampanhaCreateDialog>("Criar Campanha", parameters);
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await CarregarCampanhas();
+            await InitializeChartData();
+        }
+
+        if (!dialog.Result.IsCanceled)
+        {
+            await CarregarCampanhas();
+            await InitializeChartData();
+        }
+    }
+
+    private async Task EditCampanha()
+    {
+        dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+
+        if (selectedCampanha == null)
+        {
+            Snackbar.Add("Selecione uma campanha para editar!", Severity.Warning);
+            return;
+        }
+
+        var parameters = new DialogParameters<CampanhaCreateDialog>
+        {
+            { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
+            { x => x.novoItem, false },
+            { x => x.id_campanha, selectedCampanha.Id }
+        };
+
+        var dialog = await MudDialogService.ShowAsync<CampanhaCreateDialog>("Editar Campanha", parameters);
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await CarregarCampanhas();
+            await InitializeChartData();
+        }
+
+        if (!dialog.Result.IsCanceled)
+        {
+            await CarregarCampanhas();
+            await InitializeChartData();
+        }
+    }
+
+    private async Task EditCampanhaGRID(Me2CampanhaModelo modeloCampanha)
+    {
+        dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+
+        var parameters = new DialogParameters<CampanhaCreateDialog>
+        {
+            { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
+            { x => x.novoItem, false },
+            { x => x.id_campanha, modeloCampanha.Id }
+        };
+
+        var dialog = await MudDialogService.ShowAsync<CampanhaCreateDialog>("Editar Campanha", parameters);
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await CarregarCampanhas();
+            await InitializeChartData();
+        }
+
+        if (!dialog.Result.IsCanceled)
+        {
+            await CarregarCampanhas();
+            await InitializeChartData();
+        }
+    }
+
+    private async Task DeleteCampanha(Me2CampanhaModelo campanha)
+    {
+        var confirm = await MudDialogService.ShowMessageBox(
+            "Excluir Campanha",
+            $"Tem certeza de que deseja excluir a campanha \"{campanha.NomeCampanha}\"?",
+            yesText: "Sim",
+            noText: "Não");
+
+        if (confirm == true)
+        {
+            var campanhaService = new Me2CampanhaService();
+            var sucesso = await campanhaService.DeleteCampanha((int)campanha.Id);
+
+            if (sucesso)
+            {
+                campanhas.Remove(campanha);
+                await InitializeChartData();
+                StateHasChanged();
+            }
+            else
+            {
+                await MudDialogService.ShowMessageBox("Erro", "Não foi possível excluir a campanha.", "OK");
+            }
+        }
+    }
+
+    private async Task OnDeleteClick(Me2CampanhaModelo campanha)
+    {
+        await DeleteCampanha(campanha);
+    }
+
+    private async Task EntrarCampanha(Me2CampanhaModelo campanha)
+    {
+        var parameters = new DialogParameters<Tela_Influencers>
+        {
+            { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
+            { x => x.idCampanha, campanha.Id },
+            { x => x.habilitaFiltroPorCampanha, true}
+        };
+
+        var dialog = await MudDialogService.ShowAsync<Tela_Influencers>("Influencers da Campanha", parameters);
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await CarregarCampanhas();
+            await InitializeChartData();
+        }
+    }
+
+    private void OnSelectedItemChanged(Me2CampanhaModelo campanha)
+    {
+        selectedCampanha = campanha;
+    }
+}
+
+<style>
+    .dashboard-card {
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        height: 100%;
+    }
+
+    .dashboard-icon {
+        font-size: 2.5rem;
+        margin-right: 16px;
+    }
+
+    .dashboard-content {
+        flex: 1;
+    }
+
+    .mud-table-head th {
+        font-weight: bold;
+        background-color: #f5f5f5;
+    }
+
+    .mud-table-cell {
+        padding: 8px 16px;
+    }
+
+    .mud-card {
+        height: 100%;
+    }
+
+    .mud-chart {
+        min-height: 300px;
+    }
+</style>

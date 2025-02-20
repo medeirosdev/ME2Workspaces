@@ -1,0 +1,502 @@
+﻿@page "/entregaInfluenciadores"
+@using ME2Workspaces.Components.Pages.Me2Track.Campanhas.Me2TrackCampanha
+@using ME2Workspaces.Components.Pages.Me2Track.Influenciadores.Tarefas
+@using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+    <!-- Stepper -->
+    <MudPaper Elevation="0" Class="mb-8">
+        <div class="stepper-container">
+            @for (int i = 1; i <= 4; i++)
+            {
+                var isActive = i == 3; // Assuming we're on step 1
+                <div class="step-item @(isActive ? "active" : "")">
+                    <div class="step-circle">
+                        <span class="step-number">@i.ToString("D2")</span>
+                        @if (isActive)
+                        {
+                            @* <div class="step-progress"></div> *@
+                        }
+                    </div>
+                    <span class="step-label">@GetStepLabel(i)</span>
+                </div>
+                @if (i < 4)
+                {
+                    <div class="step-connector @(isActive ? "active" : "")"></div>
+                }
+            }
+        </div>
+    </MudPaper>
+    <MudPaper Elevation="0" Class="mb-4">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudText Typo="Typo.h4" Class="mb-4">Entregas dos influenciadores</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true" Spacing="2">
+                    @* <MudButton StartIcon="@Icons.Material.Filled.Add"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="@CreateInfluencer">
+                        Novo Influenciador
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Edit"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Disabled="@(selectedInfluencer is null)"
+                               OnClick="@EditInfluencer">
+                        Editar
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Analytics"
+                               Variant="Variant.Outlined"
+                               Color="Color.Info"
+                               OnClick="@OnInsightsClick">
+                        Me2 Track
+                    </MudButton> *@
+                    <MudSpacer />
+      
+                    <MudButton StartIcon="@Icons.Material.Filled.ArrowForward"
+                               Variant="Variant.Filled"
+                               Color="Color.Success"
+                               OnClick="@ConcluirCampanha">
+                        CONCLUIR CAMPANHA
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudPaper Class="pa-4" Elevation="2">
+        @if (isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        else
+        {
+            <MudDataGrid T="InfluencerModel"
+                         Items="@influencers"
+                         Dense="true"
+                         Hover="true"
+                         Striped="true"
+                         FixedHeader="true"
+                         Height="calc(100vh - 300px)"
+                         SelectedItem="@selectedInfluencer"
+                         SelectedItemChanged="@OnSelectedItemChanged"
+                         Loading="@isLoading"
+                         LoadingProgressColor="Color.Info"
+                         MultiSelection="false">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Influenciadores</MudText>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="searchString"
+                                  Placeholder="Pesquisar"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  IconSize="Size.Medium"
+                                  Class="mt-0 mb-3"
+                                  Immediate="true"
+                                  DebounceInterval="500"
+                                  OnDebounceIntervalElapsed="@(()=> OnSearch(searchString))" />
+                </ToolBarContent>
+
+                <Columns>
+                    <PropertyColumn Property="x => x.Nome" Title="Nome">
+                        <CellTemplate>
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudAvatar Color="Color.Primary" Size="Size.Small">
+                                    @(context.Item.Nome[0])
+                                </MudAvatar>
+                                <MudText>@context.Item.Nome</MudText>
+                            </MudStack>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Email" Title="E-mail" />
+                    <PropertyColumn Property="x => x.Instagram" Title="Instagram">
+                        <CellTemplate>
+                            @if (!string.IsNullOrEmpty(context.Item.Instagram))
+                            {
+                                <MudLink Href="@($"https://instagram.com/{context.Item.Instagram}")"
+                                         Target="_blank">
+                                    @context.Item.Instagram
+                                </MudLink>
+                            }
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <TemplateColumn Title="Ações" CellClass="d-flex justify-end">
+                        <CellTemplate>
+                            <MudStack Row="true" Spacing="0">
+                               @*  <MudIconButton Icon="@Icons.Material.Filled.Analytics"
+                                               Color="Color.Info"
+                                               Size="Size.Small"
+                                               OnClick="@(() => OnInsightsClick(context.Item))"
+                                               Title="Ver Insights" /> *@
+                                <MudIconButton Icon="@Icons.Material.Filled.Assignment"
+                                               Color="Color.Primary"
+                                               Size="Size.Large"
+                                               OnClick="@(() => OnTaskAssignmentClick(context.Item))"
+                                               Title="Atribuir Tarefas" />
+                        @*               <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               OnClick="@(() => OnRemoveClick(context.Item))"
+                                               Title="Remover" /> *@
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="InfluencerModel" />
+                </PagerContent>
+            </MudDataGrid>
+        }
+    </MudPaper>
+</MudContainer>
+@code {
+    [Parameter] public bool habilitaFiltroPorCampanha { get; set; }
+    [Parameter] public long idCampanha { get; set; }
+    [Parameter] public AuthUserModel dadosSessaoUsuario { get; set; }
+
+    private List<InfluencerModel> influencers;
+    private List<InfluencerModel> filteredInfluencers;
+    private InfluencerModel selectedInfluencer;
+    private bool isLoading = true;
+    private string searchString = string.Empty;
+    private string storedEmail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await VerificarLogin();
+        await CarregarInfluencers();
+    }
+
+    private string GetStepLabel(int step) => step switch
+    {
+        1 => "Informações",
+        2 => "Influencers",
+        3 => "Entregas",
+        4 => "Conclusão",
+        _ => string.Empty
+    };
+
+    private async Task CarregarInfluencers()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var influencerService = new InfluencerFormService();
+            influencers = habilitaFiltroPorCampanha
+                ? await influencerService.GetInfluencersByCampaignIdAsync(idCampanha)
+                : await influencerService.GetAllInfluencersAsync();
+
+            influencers ??= new List<InfluencerModel>();
+            filteredInfluencers = new List<InfluencerModel>(influencers);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao carregar influenciadores.", Severity.Error);
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (string.IsNullOrEmpty(storedEmail))
+            {
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+
+            dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+            if (dadosSessaoUsuario == null)
+            {
+                NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao verificar login: {ex.Message}");
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private async Task CreateInfluencer()
+    {
+        try
+        {
+            dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+            var parameters = new DialogParameters<InfluencerAlterarDialog>
+            {
+                { x => x.novoItem, true },
+                { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
+                { x => x.IDCampanha, idCampanha }
+            };
+
+            var dialog = await DialogService.ShowAsync<InfluencerAlterarDialog>(
+                "Novo Influenciador",
+                parameters,
+                new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true }
+            );
+
+            if (!dialog.Result.IsCanceled)
+            {
+                await CarregarInfluencers();
+                Snackbar.Add("Influenciador criado com sucesso!", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao criar influenciador.", Severity.Error);
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+
+    private async Task EditInfluencer()
+    {
+        if (selectedInfluencer == null)
+        {
+            Snackbar.Add("Selecione um influenciador para editar.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+            var parameters = new DialogParameters<InfluencerAlterarDialog>
+            {
+                { x => x.novoItem, false },
+                { x => x.influencerId, selectedInfluencer.ID },
+                { x => x.dadosSessaoUsuario, dadosSessaoUsuario }
+            };
+
+            var dialog = await DialogService.ShowAsync<InfluencerAlterarDialog>(
+                "Editar Influenciador",
+                parameters,
+                new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true }
+            );
+
+            if (!dialog.Result.IsCanceled)
+            {
+                await CarregarInfluencers();
+                Snackbar.Add("Influenciador atualizado com sucesso!", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao editar influenciador.", Severity.Error);
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+    }
+
+    private async Task OnRemoveClick(InfluencerModel influencer)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Deseja realmente excluir o influenciador {influencer.Nome}?" },
+            { "ButtonText", "Excluir" },
+            { "Color", Color.Error }
+        };
+
+
+        try
+        {
+            var influencerService = new InfluencerFormService();
+            bool success = await influencerService.DeleteInfluencerAsync(influencer.Email);
+
+            if (success)
+            {
+                await CarregarInfluencers();
+                Snackbar.Add("Influenciador excluído com sucesso!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Não foi possível excluir o influenciador.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao excluir influenciador.", Severity.Error);
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+
+    }
+
+    private async Task OnInsightsClick(InfluencerModel influencer)
+    {
+        var parameters = new DialogParameters<InsightDialog>
+        {
+            { x => x.ID_Influencer, influencer.ID },
+            { x => x.IDCampanha, influencer.ID_Campanha },
+            { x => x.ID_Usuario, dadosSessaoUsuario.Id }
+        };
+
+        await DialogService.ShowAsync<InsightDialog>(
+            "Insights do Influenciador",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true }
+        );
+    }
+
+    private async Task OnTaskAssignmentClick(InfluencerModel influencer)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ID_Influencer", influencer.ID },
+            { "IDCampanha", influencer.ID_Campanha },
+            { "ID_Usuario", dadosSessaoUsuario.Id }
+        };
+
+        var dialog = await DialogService.ShowAsync<TaskAssignmentDialog>(
+            "Atribuir Tarefas",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true }
+        );
+
+        if (!dialog.Result.IsCanceled)
+        {
+            await CarregarInfluencers();
+        }
+    }
+
+    private async Task OnInsightsClick()
+    {
+        var parameters = new DialogParameters<Me2TrackCampanha>
+        {
+            { x => x.IDCampanha, idCampanha },
+            { x => x.ID_Usuario, dadosSessaoUsuario.Id }
+        };
+
+        await DialogService.ShowAsync<Me2TrackCampanha>(
+            "Me2 Track da Campanha",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true }
+        );
+    }
+
+    private void OnSelectedItemChanged(InfluencerModel influencer)
+    {
+        selectedInfluencer = influencer;
+        StateHasChanged();
+    }
+
+    private void OnSearch(string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            filteredInfluencers = new List<InfluencerModel>(influencers);
+        }
+        else
+        {
+            searchText = searchText.ToLower();
+            filteredInfluencers = influencers
+                .Where(i => i.Nome.ToLower().Contains(searchText) ||
+                           i.Email.ToLower().Contains(searchText) ||
+                           i.Instagram.ToLower().Contains(searchText))
+                .ToList();
+        }
+        StateHasChanged();
+    }
+
+    private void ConcluirCampanha()
+    {
+
+    }
+}
+<style>
+    .stepper-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 0;
+        position: relative;
+    }
+
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .step-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-color: var(--mud-palette-background-grey);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        border: 2px solid var(--mud-palette-primary);
+        transition: all 0.3s ease;
+    }
+
+    .step-item.active .step-circle {
+        background-color: var(--mud-palette-primary);
+        color: white;
+    }
+
+    .step-number {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .step-label {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--mud-palette-text-primary);
+    }
+
+    .step-connector {
+        flex: 1;
+        height: 2px;
+        background-color: var(--mud-palette-background-grey);
+        position: relative;
+        margin: 0 0.5rem;
+    }
+
+        .step-connector.active {
+            background-color: var(--mud-palette-primary);
+        }
+
+    .step-progress {
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: var(--mud-palette-primary);
+    }
+
+    @@media (max-width: 600px) {
+        .step-label {
+            font-size: 0.75rem;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+        }
+
+        .step-number {
+            font-size: 0.875rem;
+        }
+    }
+</style>

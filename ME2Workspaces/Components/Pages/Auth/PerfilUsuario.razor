@@ -1,0 +1,142 @@
+﻿@inject IJSRuntime JSRuntime
+@inject UserService UserService
+@inject ISnackbar Snackbar
+@page "/user"
+@rendermode InteractiveServer
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+    <MudPaper Elevation="3" Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudText Typo="Typo.h4" Class="mb-4">Perfil do Usuário</MudText>
+            </MudItem>
+
+            @if (isLoading)
+            {
+                <MudItem xs="12" Class="d-flex justify-center">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12">
+                    <MudForm @ref="form" @bind-IsValid="@isValid">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="user.Username"
+                                              Label="Nome"
+                                              Variant="Variant.Filled"
+                                              Required="true"
+                                              RequiredError="Nome é obrigatório"
+                                              Class="mb-3" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="user.Email"
+                                              Label="Email"
+                                              Variant="Variant.Filled"
+                                              Disabled
+                                              Class="mb-3" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="user.Senha"
+                                              Label="Senha"
+                                              Variant="Variant.Filled"
+                                              InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                              Required="true"
+                                              RequiredError="Senha é obrigatória"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@(showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                              OnAdornmentClick="() => showPassword = !showPassword"
+                                              Class="mb-3" />
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="user.InformacoesEmpresa"
+                                              Label="Informações da Empresa"
+                                              Variant="Variant.Filled"
+                                              Lines="3"
+                                              Class="mb-4" />
+                            </MudItem>
+
+                            <MudItem xs="12" Class="d-flex justify-end">
+                 
+                                <MudButton OnClick="SaveUser"
+                                           Color="Color.Primary"
+                                           Variant="Variant.Filled"
+                                           Disabled="@(!isValid || isSaving)"
+                                           StartIcon="@Icons.Material.Filled.Save">
+                                    @(isSaving ? "Salvando..." : "Salvar")
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudForm>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private AuthUserModel user = new();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool showPassword = false;
+    private bool isValid = false;
+    private MudForm form;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                user = await UserService.GetUserByEmail(storedEmail) ?? new AuthUserModel();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao carregar dados do usuário", Severity.Error);
+            Console.WriteLine($"Error loading user: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveUser()
+    {
+        if (!isValid) return;
+
+        try
+        {
+            isSaving = true;
+            await form.Validate();
+
+            if (form.IsValid)
+            {
+                var result = await UserService.UpdateUser(user);
+                if (result)
+                {
+                    Snackbar.Add("Perfil atualizado com sucesso!", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Erro ao atualizar o perfil", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao salvar alterações", Severity.Error);
+            Console.WriteLine($"Error saving user: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

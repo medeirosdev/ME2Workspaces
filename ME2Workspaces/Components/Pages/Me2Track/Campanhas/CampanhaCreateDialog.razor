@@ -1,0 +1,316 @@
+﻿@page "/campanha-dialog"
+
+@using ME2Workspaces.Components.Pages.Me2Track.Influenciadores
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@inject ISnackbar Snackbar
+
+<MudDialog Style="max-width: 900px; min-height: 600px;">
+    <TitleContent>
+        <MudPaper Elevation="0" Class="d-flex align-center pa-4 mud-theme-primary">
+            <MudIcon Icon="@(novoItem ? Icons.Material.Filled.AddCircleOutline : Icons.Material.Filled.Edit)" 
+                     Class="mr-3" Size="Size.Large" />
+            <MudText Typo="Typo.h5" Class="ml-1">
+                @(novoItem ? "Nova Campanha" : "Editar Campanha")
+            </MudText>
+        </MudPaper>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="form" Class="mt-4">
+            <!-- Stepper -->
+            <MudPaper Elevation="0" Class="mb-8">
+                <div class="stepper-container">
+                    @for (int i = 1; i <= 4; i++)
+                    {
+                        var isActive = i == 1; // Assuming we're on step 1
+                        <div class="step-item @(isActive ? "active" : "")">
+                            <div class="step-circle">
+                                <span class="step-number">@i.ToString("D2")</span>
+                                @if (isActive)
+                                {
+                                    @* <div class="step-progress"></div> *@
+                                }
+                            </div>
+                            <span class="step-label">@GetStepLabel(i)</span>
+                        </div>
+                        @if (i < 4)
+                        {
+                            <div class="step-connector @(isActive ? "active" : "")"></div>
+                        }
+                    }
+                </div>
+            </MudPaper>
+
+            <!-- Form Fields -->
+            <MudGrid Spacing="4">
+                <MudItem xs="12">
+                    <MudTextField T="string"
+                                Label="Nome da campanha"
+                                @bind-Value="itemManipulado.NomeCampanha"
+                                Variant="Variant.Filled"
+                                Required="true"
+                                HelperText="Digite um nome descritivo para sua campanha"
+                                Class="mb-4" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField T="string"
+                                Label="Descrição da campanha"
+                                @bind-Value="itemManipulado.DescricaoCampanha"
+                                  Variant="Variant.Filled"
+                                Lines="4"
+                                HelperText="Descreva os objetivos e detalhes da campanha"
+                                Class="mb-4" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker Label="Data de início"
+                                 @bind-Date="itemManipulado.DataInicio"
+                                   Variant="Variant.Filled"
+                                 HelperText="Selecione a data de início"
+                                 Class="mb-4" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker Label="Data de término"
+                                 @bind-Date="itemManipulado.DataTermino"
+                                   Variant="Variant.Filled"
+                                 HelperText="Selecione a data de término"
+                                 Class="mb-4" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudNumericField T="decimal"
+                                   Label="Total de investimento"
+                                   @bind-Value="itemManipulado.TotalInvestimento"
+                                     Variant="Variant.Filled"
+                                   Adornment="Adornment.Start"
+                                   AdornmentText="R$"
+                                   Format="N2"
+                                   HelperText="Informe o valor total do investimento"
+                                   Class="mb-4" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                  Variant="Variant.Outlined" 
+                  Color="Color.Default" 
+                  Class="mr-2">
+            Cancelar
+        </MudButton>
+        <MudButton OnClick="Salvar" 
+                  Variant="Variant.Filled" 
+                  Color="Color.Primary" 
+                  StartIcon="@Icons.Material.Filled.Save">
+            Salvar
+        </MudButton>
+        @if(novoItem == false)
+        {
+            <MudButton OnClick="EntrarCampanha"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.JoinFull">
+                Entrar na Campanha
+            </MudButton>
+        }
+        
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public AuthUserModel dadosSessaoUsuario { get; set; } = new AuthUserModel();
+    [Parameter] public bool novoItem { get; set; }
+    [Parameter] public long id_campanha { get; set; }
+    [Parameter] public long id_usuario { get; set; }
+    private MudForm form;
+    private Me2CampanhaService servicoCampanha = new();
+    public Me2CampanhaModelo itemManipulado { get; set; } = new();
+
+    private async Task EntrarCampanha()
+    {
+        var parameters = new DialogParameters<Tela_Influencers>
+        {
+            { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
+            { x => x.idCampanha, id_campanha },
+            { x => x.habilitaFiltroPorCampanha, true}
+        };
+
+        var dialog = await MudDialogService.ShowAsync<Tela_Influencers>("Influencers da Campanha", parameters);
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            Snackbar.Add("Alterações salvas com sucesso!", Severity.Success);
+        }
+    }
+
+    private async Task EntrarNaNovaCampanha(long idCampanhaNova)
+    {
+        var parameters = new DialogParameters<Tela_Influencers>
+        {
+            { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
+            { x => x.idCampanha, idCampanhaNova },
+            { x => x.habilitaFiltroPorCampanha, true}
+        };
+
+        var dialog = await MudDialogService.ShowAsync<Tela_Influencers>("Influencers da Campanha", parameters);
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            Snackbar.Add("Alterações salvas com sucesso!", Severity.Success);
+        }
+    }
+
+    private string GetStepLabel(int step) => step switch
+    {
+        1 => "Informações",
+        2 => "Influencers",
+        3 => "Entregas",
+        4 => "Conclusão",
+        _ => string.Empty
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!novoItem)
+        {
+            itemManipulado = await servicoCampanha.GetCampanhaById(id_campanha) ?? new Me2CampanhaModelo();
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public async Task Salvar()
+    {
+        await form.Validate();
+        if (!form.IsValid)
+        {
+            Snackbar.Add("Por favor, preencha todos os campos obrigatórios", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            if (novoItem)
+            {
+                itemManipulado.EmpresaId = dadosSessaoUsuario.Id;
+                var newId = await servicoCampanha.CreateCampanha(itemManipulado);
+                if (newId > 0)
+                {
+                    Snackbar.Add("Campanha criada com sucesso!", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                    await EntrarNaNovaCampanha(newId);
+                }
+                else
+                {
+                    Snackbar.Add("Não foi possível criar a campanha. Tente novamente.", Severity.Error);
+                }
+
+                
+            }
+            else
+            {
+                itemManipulado.Id = id_campanha;
+                var atualizado = await servicoCampanha.UpdateCampanha(itemManipulado);
+                if (atualizado)
+                {
+                    Snackbar.Add("Campanha atualizada com sucesso!", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    Snackbar.Add("Não foi possível atualizar a campanha. Tente novamente.", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+    }
+}
+
+<style>
+    .stepper-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 0;
+        position: relative;
+    }
+
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .step-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background-color: var(--mud-palette-background-grey);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        border: 2px solid var(--mud-palette-primary);
+        transition: all 0.3s ease;
+    }
+
+    .step-item.active .step-circle {
+        background-color: var(--mud-palette-primary);
+        color: white;
+    }
+
+    .step-number {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .step-label {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--mud-palette-text-primary);
+    }
+
+    .step-connector {
+        flex: 1;
+        height: 2px;
+        background-color: var(--mud-palette-background-grey);
+        position: relative;
+        margin: 0 0.5rem;
+    }
+
+    .step-connector.active {
+        background-color: var(--mud-palette-primary);
+    }
+
+    .step-progress {
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: var(--mud-palette-primary);
+    }
+
+    @@media (max-width: 600px) {
+        .step-label {
+            font-size: 0.75rem;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+        }
+
+        .step-number {
+            font-size: 0.875rem;
+        }
+    }
+</style>

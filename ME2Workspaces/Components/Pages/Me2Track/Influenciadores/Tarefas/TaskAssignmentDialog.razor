@@ -1,0 +1,336 @@
+﻿@rendermode InteractiveServer
+@using ME2Workspaces.Components.Pages.Me2Track.Influenciadores.Tarefas
+@using MudBlazor
+@using ME2Workspaces.ModulosME2.TarefasInfluencer
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@inject IDialogService MudDialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<MudDialog Style="width: 1000px; max-height: 90vh; padding: 0;">
+    <DialogContent>
+        <MudContainer Style="padding: 24px;" MaxWidth="MaxWidth.False">
+            <!-- Header Section -->
+            <MudPaper Elevation="0" Class="d-flex flex-column gap-4 mb-4">
+                <MudBreadcrumbs Items="@(new List<BreadcrumbItem>
+                {
+                    new BreadcrumbItem("Campanhas", "/campanhas"),
+                    new BreadcrumbItem(campanhaNome, null),
+                    new BreadcrumbItem(influencerNome, null)
+                })" />
+
+                <div class="d-flex justify-space-between align-center">
+                    <MudText Typo="Typo.h5" Class="mb-2">
+                        Gerenciamento de Tarefas
+                    </MudText>
+                    <MudChip T="string" Icon="@Icons.Material.Filled.Campaign" Color="Color.Primary">
+                        @campanhaNome
+                    </MudChip>
+                </div>
+
+                <MudDivider />
+            </MudPaper>
+
+            <!-- Action Buttons -->
+            <MudPaper Elevation="0" Class="d-flex gap-2 mb-4">
+                <MudButton StartIcon="@Icons.Material.Filled.Add"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="CriarTarefa"
+                           Size="Size.Large">
+                    Nova Tarefa
+                </MudButton>
+
+                <MudButton StartIcon="@Icons.Material.Filled.Edit"
+                           Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="EditarTarefa"
+                           Disabled="@(!CanEditar)"
+                           Size="Size.Large">
+                    Editar
+                </MudButton>
+
+                <MudButton StartIcon="@Icons.Material.Filled.Delete"
+                           Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           OnClick="ExcluirTarefa"
+                           Disabled="@(!CanEditar)"
+                           Size="Size.Large">
+                    Excluir
+                </MudButton>
+
+                <MudSpacer />
+
+                <MudButton StartIcon="@Icons.Material.Filled.Link"
+                           Variant="Variant.Outlined"
+                           Color="Color.Info"
+                           OnClick="GerarLinkInfluenciador"
+                           Size="Size.Large">
+                    Acessar Portal do Influenciador
+                </MudButton>
+            </MudPaper>
+
+            <!-- Tasks Grid -->
+            <MudPaper Elevation="1" Class="rounded-lg overflow-hidden">
+                <MudDataGrid T="InfluencerTask"
+                             Dense="true"
+                             Hover="true"
+                             Items="@tarefas"
+                             Filterable="true"
+                             SortMode="@SortMode.Multiple"
+                             Groupable="false"
+                             SelectedItem="@tarefaSelecionada"
+                             SelectedItemChanged="@OnSelectedTaskChanged"
+                             MultiSelection="false"
+                             Loading="@isLoading"
+                             LoadingProgressColor="Color.Primary"
+                             Height="400px">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Tarefas</MudText>
+                        <MudSpacer />
+                        <MudTextField @bind-Value="searchString"
+                                      Placeholder="Pesquisar..."
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      IconSize="Size.Medium"
+                                      Class="mt-0 mb-0"
+                                      Immediate="true"
+                                      DebounceInterval="300" />
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Descricao" Title="Descrição">
+                            <CellTemplate Context="cell">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-2" />
+                                    @cell.Item.Descricao
+                                </div>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.Tipo_Tarefa" Title="Tipo">
+                            <CellTemplate Context="cell">
+                                <MudChip Size="Size.Small" Color="@GetTipoTarefaColor(cell.Item.Tipo_Tarefa)">
+                                    @GetTipoTarefaText(cell.Item.Tipo_Tarefa)
+                                </MudChip>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.Prazo" Title="Prazo">
+                            <CellTemplate Context="cell">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Event" Class="mr-2" />
+                                    @cell.Item.Prazo.ToString()
+                                </div>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.DataCriacao" Title="Criado Em">
+                            <CellTemplate Context="cell">
+                                <MudText Typo="Typo.body2">
+                                    @cell.Item.DataCriacao.ToString("dd/MM/yyyy")
+                                </MudText>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <TemplateColumn Title="Status" SortBy="x => x.Feito">
+                            <CellTemplate Context="cell">
+                                <MudChip Size="Size.Small"
+                                         Color="@(cell.Item.Feito ? Color.Success : Color.Warning)"
+                                         Icon="@(cell.Item.Feito ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Schedule)">
+                                    @(cell.Item.Feito ? "Concluída" : "Pendente")
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <PagerContent>
+                        <MudDataGridPager T="InfluencerTask" />
+                    </PagerContent>
+                </MudDataGrid>
+            </MudPaper>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton StartIcon="@Icons.Material.Filled.Close"
+                   OnClick="Fechar"
+                   Color="Color.Default"
+                   Variant="Variant.Text">
+            Fechar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public long ID_Influencer { get; set; }
+    [Parameter] public long IDCampanha { get; set; }
+    [Parameter] public long ID_Usuario { get; set; }
+
+    private List<InfluencerTask> tarefas = new List<InfluencerTask>();
+    private InfluencerTask tarefaSelecionada;
+    private string influencerNome = "";
+    private string campanhaNome = "";
+    private bool CanEditar => tarefaSelecionada != null;
+    private bool isLoading = false;
+    private string searchString = "";
+
+    private readonly InfluencerTaskService taskService = new InfluencerTaskService();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            isLoading = true;
+            await Task.WhenAll(
+                CarregarTarefas(),
+                CarregarInformacoes()
+            );
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao carregar dados: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private Color GetTipoTarefaColor(TipoTarefa tipo)
+    {
+        return tipo switch
+        {
+            TipoTarefa.Stories => Color.Info,
+            TipoTarefa.Publicacao => Color.Success,
+            TipoTarefa.Reels => Color.Primary,
+            _ => Color.Default
+        };
+    }
+
+    private string GetTipoTarefaText(TipoTarefa tipo)
+    {
+        return tipo switch
+        {
+            TipoTarefa.Stories => "Stories",
+            TipoTarefa.Publicacao => "Publicação",
+            TipoTarefa.Reels => "Reels",
+            _ => "Desconhecido"
+        };
+    }
+
+    private async Task CarregarTarefas()
+    {
+        tarefas = await taskService.GetTasksByCampaignAndInfluencer(IDCampanha, ID_Influencer);
+    }
+
+    private async Task CarregarInformacoes()
+    {
+        var influencerService = new InfluencerFormService();
+        var campanhaService = new Me2CampanhaService();
+
+        var influencer = await influencerService.GetInfluencerByIdAsync(ID_Influencer);
+        var campanha = await campanhaService.GetCampanhaById(IDCampanha);
+
+        influencerNome = influencer?.Nome ?? "Influenciador não encontrado";
+        campanhaNome = campanha?.NomeCampanha ?? "Campanha não encontrada";
+    }
+
+    private void OnSelectedTaskChanged(InfluencerTask task)
+    {
+        tarefaSelecionada = task;
+    }
+
+    private async Task CriarTarefa()
+    {
+        var parameters = new DialogParameters
+        {
+            { "novoItem", true },
+            { "ID_Influencer", ID_Influencer },
+            { "IDCampanha", IDCampanha },
+            { "ID_Usuario", ID_Usuario }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium };
+        var dialog = await MudDialogService.ShowAsync<TaskAlterarDialog>("Nova Tarefa", parameters, options);
+
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await LoadDataAsync();
+            Snackbar.Add("Tarefa criada com sucesso!", Severity.Success);
+        }
+    }
+
+    private async Task EditarTarefa()
+    {
+        if (tarefaSelecionada == null)
+        {
+            Snackbar.Add("Selecione uma tarefa para editar", Severity.Warning);
+            return;
+        }
+
+        var parameters = new DialogParameters
+        {
+            { "novoItem", false },
+            { "ID_Influencer", ID_Influencer },
+            { "IDCampanha", IDCampanha },
+            { "ID_Usuario", ID_Usuario },
+            { "taskId", tarefaSelecionada.Id }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium };
+        var dialog = await MudDialogService.ShowAsync<TaskAlterarDialog>("Editar Tarefa", parameters, options);
+
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await LoadDataAsync();
+            Snackbar.Add("Tarefa atualizada com sucesso!", Severity.Success);
+        }
+    }
+
+    private async Task ExcluirTarefa()
+    {
+        if (tarefaSelecionada == null)
+        {
+            Snackbar.Add("Selecione uma tarefa para excluir", Severity.Warning);
+            return;
+        }
+
+        bool? confirm = await MudDialogService.ShowMessageBox(
+            "Excluir Tarefa",
+            $"Tem certeza que deseja excluir a tarefa \"{tarefaSelecionada.Descricao}\"?",
+            yesText: "Sim",
+            noText: "Não"
+        );
+
+        if (confirm == true)
+        {
+            try
+            {
+                bool success = await taskService.DeleteTask(tarefaSelecionada.Id);
+                if (success)
+                {
+                    await LoadDataAsync();
+                    Snackbar.Add("Tarefa excluída com sucesso!", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Não foi possível excluir a tarefa", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Erro ao excluir tarefa: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private void GerarLinkInfluenciador()
+    {
+        string url = $"/tarefasinfluenciador/{IDCampanha}/{ID_Influencer}";
+        NavigationManager.NavigateTo(url);
+    }
+
+    private void Fechar() => MudDialog.Close(DialogResult.Ok(true));
+}

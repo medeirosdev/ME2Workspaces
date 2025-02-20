@@ -1,0 +1,38 @@
+﻿@inherits LayoutComponentBase
+@* Required *@
+
+<div class="page">
+    <div class="sidebar" style="background:none">
+        <NavMenu />
+    </div>
+
+    <main>
+       @*  <div class="top-row px-4" style="border-radius:20px;margin-left:20px">
+            ME2
+        </div> *@
+
+        <article class="content px-4">
+            <MudThemeProvider />
+            <MudPopoverProvider />
+
+            @* Needed for dialogs *@
+            <MudDialogProvider FullWidth="false"
+                               MaxWidth="MaxWidth.Large"
+                               CloseButton="true"
+                               BackdropClick="false"
+                               NoHeader="true"
+                               Position="DialogPosition.Center"
+                               CloseOnEscapeKey="true"/>
+
+            @* Needed for snackbars *@
+            <MudSnackbarProvider />
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>

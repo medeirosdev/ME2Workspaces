@@ -1,0 +1,191 @@
+﻿@rendermode InteractiveServer
+@page "/me2trackinfluenciador"
+@using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores.AnalisesInsight
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@inject IDialogService MudDialogService
+@inject ISnackbar Snackbar
+
+<MudDialog Style="width: 100%; height: 100%; padding:30px;">
+    <DialogContent>
+        <h3>Me2 Track do influenciador @influencerNome da campanha @campanhaNome</h3>
+        <MudStack Spacing="3">
+            <!-- Linha de botões para ações de insights -->
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="AbrirGraficosME2Track">
+                    Gráficos da ME2 Track
+                </MudButton>
+            </MudStack>
+
+            <!-- Grid dos insights -->
+            <MudDataGrid T="Insight"
+                         Items="@insights"
+                         Filterable="true"
+                         SortMode="@SortMode.None"
+                         Groupable="true"
+                         
+                         SelectedItem="@selectedInsight"
+                         SelectedItemChanged="@OnSelectedInsightChanged"
+                         MultiSelection="true"
+                         Class="my-datagrid"
+                         Style="border-radius: 12px; overflow: hidden; border: 1px solid #ccc;">
+                <Columns>
+                    <PropertyColumn Property="x => x.AtividadeDoPerfil" Title="Rede Social" />
+                    <PropertyColumn Property="x => x.TipoInsight" Title="Tipo Entrega" />
+                    <PropertyColumn Property="x => x.DataInclusao" Title="Cronograma" Format="d" />
+                    <PropertyColumn Property="x => x.Visualizacoes" Title="Visualizações" />
+                    <PropertyColumn Property="x => (x.Interacoes/x.Visualizacoes)" Title="Percentual Engajamento" />
+                    @* // Toques na Figurinha *@
+                    <PropertyColumn Property="x => x.AlcanceSeguidores" Title="Acesso por figura" />
+                    @* //Cliques no Link *@
+                    <PropertyColumn Property="x => x.AlcanceNaoSeguidores" Title="Acesso por Link" />
+
+                    <PropertyColumn Property="x => (x.AlcanceNaoSeguidores/x.Visualizacoes)" Title="Percentual Acesso ao Link" />
+                </Columns>
+            </MudDataGrid>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Fechar" Color="Color.Default">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public long ID_Influencer { get; set; }
+    [Parameter] public long IDCampanha { get; set; }
+    [Parameter] public long ID_Usuario { get; set; }
+
+    private List<Insight> insights = new List<Insight>();
+    private Insight selectedInsight;
+
+    // Variáveis para armazenar os nomes
+    private string influencerNome = "";
+    private string campanhaNome = "";
+
+    // Habilita o botão "Alterar Insight" apenas se houver um insight selecionado.
+    private bool CanAlterInsight => selectedInsight != null;
+
+    // Instância do serviço para carregar os insights.
+    private readonly InsightService insightService = new InsightService();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarInsights();
+        await CarregarInformacoes();
+    }
+
+    private async Task CarregarInsights()
+    {
+        // Carrega os insights da campanha e filtra os que pertencem ao influenciador.
+        var allInsights = await insightService.GetInsightsByCampaignId(IDCampanha);
+        insights = allInsights.Where(i => i.ID_Influencer == ID_Influencer).ToList();
+    }
+
+    private async Task CarregarInformacoes()
+    {
+        // Obtém os dados do influenciador
+        var influencerService = new InfluencerFormService();
+        var influencer = await influencerService.GetInfluencerByIdAsync(ID_Influencer);
+        if (influencer != null)
+        {
+            influencerNome = influencer.Nome;
+        }
+
+        // Obtém os dados da campanha
+        var campanhaService = new Me2CampanhaService();
+        var campanha = await campanhaService.GetCampanhaById(IDCampanha);
+        if (campanha != null)
+        {
+            campanhaNome = campanha.NomeCampanha;
+        }
+        StateHasChanged();
+    }
+
+    private void OnSelectedInsightChanged(Insight insight)
+    {
+        selectedInsight = insight;
+    }
+
+    // Lógica para adicionar insight (abre o diálogo de criação)
+    private async Task AdicionarInsight()
+    {
+        var parameters = new DialogParameters
+        {
+            { "novoItem", true },
+            { "ID_Influencer", ID_Influencer },
+            { "IDCampanha", IDCampanha },
+            { "ID_Usuario", ID_Usuario }
+        };
+
+        var dialog = await MudDialogService.ShowAsync<InsightAlterarDialog>("Criar Insight", parameters);
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await CarregarInsights();
+        }
+    }
+
+    // Lógica para alterar insight (abre o diálogo de edição e passa o insight selecionado)
+    private async Task AlterarInsight()
+    {
+        if (selectedInsight == null)
+        {
+            Snackbar.Add("Selecione um insight para editar!", Severity.Warning);
+            return;
+        }
+
+        var parameters = new DialogParameters
+        {
+            { "novoItem", false },
+            { "ID_Influencer", ID_Influencer },
+            { "IDCampanha", IDCampanha },
+            { "ID_Usuario", ID_Usuario },
+            { "insightId", selectedInsight.Id }
+        };
+
+        var dialog = await MudDialogService.ShowAsync<InsightAlterarDialog>("Editar Insight", parameters);
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await CarregarInsights();
+        }
+    }
+
+    // Botão para abrir o diálogo de análise dos insights (gráficos)
+    private async Task AbrirAnaliseInsights()
+    {
+        var parameters = new DialogParameters
+        {
+            { "ID_Influencer", ID_Influencer },
+            { "IDCampanha", IDCampanha },
+            { "ID_Usuario", ID_Usuario }
+        };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, CloseButton = true };
+        var dialog = MudDialogService.Show<InsightsGraficos>("Análise dos Insights", parameters, options);
+        await dialog.Result;
+    }
+
+    // Botão para abrir o diálogo de previsão ME2 (placeholder)
+    private void AbrirGraficosME2Track()
+    {
+        Snackbar.Add("Abrir diálogo de previsão ME2 de insights e rendimento (não implementado)", Severity.Info);
+    }
+
+    private void Fechar()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}
+
+        <style>
+
+
+        .my-datagrid .mud-table-head th {
+            color: #000; /* Texto preto no cabeçalho */
+            font-weight: bold;
+        }
+
+        </style>

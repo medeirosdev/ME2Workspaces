@@ -1,0 +1,251 @@
+﻿@page "/influencer-dialog"
+
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@inject ISnackbar Snackbar
+
+<MudDialog DisableSidePadding="true">
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="pa-6">
+            <MudPaper Elevation="0" Class="pa-4">
+                <MudGrid>
+                    <!-- Header Section -->
+                    <MudItem xs="12" Class="d-flex align-center mb-4">
+                        <MudIcon Icon="@(novoItem ? Icons.Material.Filled.PersonAdd : Icons.Material.Filled.Edit)"
+                                 Size="Size.Large"
+                                 Class="mr-3"
+                                 Color="Color.Primary" />
+                        <MudText Typo="Typo.h5">
+                            @(novoItem ? "Novo Influencer" : "Editar Influencer")
+                        </MudText>
+                    </MudItem>
+
+                    <MudForm @ref="form" Model="itemInfluencer">
+                        <MudGrid Spacing="3">
+                            <!-- Profile Section -->
+                            <MudItem xs="12" md="4">
+                                <MudPaper Class="pa-4" Elevation="0">
+                                    <MudAvatar Size="Size.Large" Class="mb-4 mx-auto d-block" Style="width: 150px; height: 150px;">
+                                        @if (!string.IsNullOrEmpty(itemInfluencer.URLFoto))
+                                        {
+                                            <MudImage Src="@itemInfluencer.URLFoto" Alt="Profile" ObjectFit="ObjectFit.Cover" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Large" />
+                                        }
+                                    </MudAvatar>
+                                </MudPaper>
+                            </MudItem>
+
+                            <!-- Form Fields -->
+                            <MudItem xs="12" md="8">
+                                <MudGrid>
+                                    <!-- Basic Information -->
+                                    <MudItem xs="12" sm="6">
+                                        <MudTextField @bind-Value="itemInfluencer.Nome"
+                                                      Label="Nome"
+                                                      Variant="Variant.Outlined"
+                                                      Required="true"
+                                                      RequiredError="Nome é obrigatório"
+                                                      MaxLength="100" />
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="6">
+                                        <MudTextField @bind-Value="itemInfluencer.Email"
+                                                      Label="Email"
+                                                      Variant="Variant.Outlined"
+                                                      Required="true"
+                                                      RequiredError="Email é obrigatório"
+                                                      MaxLength="150" />
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="6">
+                                        <MudTextField @bind-Value="itemInfluencer.Telefone"
+                                                      Label="Telefone"
+                                                      Variant="Variant.Outlined"
+                           
+                                                      MaxLength="15" />
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="6">
+                                        <MudNumericField @bind-Value="itemInfluencer.Idade"
+                                                         Label="Idade"
+                                                         Variant="Variant.Outlined"
+                                                         Min="0"
+                                                         Max="120" />
+                                    </MudItem>
+
+                                    <!-- Social Media Section -->
+                                    <MudItem xs="12">
+                                        <MudDivider Class="my-4" />
+                                        <MudText Typo="Typo.subtitle1" Class="mb-3">Redes Sociais</MudText>
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="6">
+                                        <MudTextField @bind-Value="itemInfluencer.Instagram"
+                                                      Label="Instagram"
+                                                      Variant="Variant.Outlined"
+                                                      Adornment="Adornment.Start"
+                                                      AdornmentIcon="@Icons.Custom.Brands.Instagram"
+                                                      OnBlur="@(async () => await FetchInstagramData())" />
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="6">
+                                        <MudTextField @bind-Value="itemInfluencer.YouTube"
+                                                      Label="YouTube"
+                                                      Variant="Variant.Outlined"
+                                                      Adornment="Adornment.Start"
+                                                      AdornmentIcon="@Icons.Custom.Brands.YouTube" />
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="6">
+                                        <MudTextField @bind-Value="itemInfluencer.TikTok"
+                                                      Label="TikTok"
+                                                      Variant="Variant.Outlined"
+                                                      Adornment="Adornment.Start"
+                                                      AdornmentIcon="@Icons.Custom.Brands.TikTok" />
+                                    </MudItem>
+                                </MudGrid>
+                            </MudItem>
+                        </MudGrid>
+                    </MudForm>
+                </MudGrid>
+            </MudPaper>
+        </MudContainer>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel"
+                   Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.Cancel"
+                   Class="mr-2">
+            Cancelar
+        </MudButton>
+        <MudButton OnClick="Salvar"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@_processing">
+            @if (_processing)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Processando...</MudText>
+            }
+            else
+            {
+                @(novoItem ? "Criar" : "Salvar")
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public bool novoItem { get; set; }
+    [Parameter] public long influencerId { get; set; }
+    [Parameter] public long IDCampanha { get; set; }
+    [Parameter] public AuthUserModel dadosSessaoUsuario { get; set; }
+
+    private MudForm form;
+    private bool _processing;
+    private readonly InfluencerFormService influencerService = new();
+    public InfluencerModel itemInfluencer { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!novoItem && influencerId > 0)
+        {
+            await LoadInfluencer();
+        }
+    }
+
+    private async Task LoadInfluencer()
+    {
+        try
+        {
+            var influencer = await influencerService.GetInfluencerByIdAsync(influencerId);
+            if (influencer != null)
+            {
+                itemInfluencer = influencer;
+            }
+            else
+            {
+                Snackbar.Add("Influencer não encontrado.", Severity.Warning);
+                MudDialog.Cancel();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao carregar dados: {ex.Message}", Severity.Error);
+            MudDialog.Cancel();
+        }
+    }
+
+    private async Task FetchInstagramData()
+    {
+        if (string.IsNullOrWhiteSpace(itemInfluencer.Instagram)) return;
+
+        try
+        {
+            var userData = await ModuloInstagramME2Check.GetInstagramAPI(itemInfluencer.Instagram);
+            if (userData?.profile_picture_url != null)
+            {
+                itemInfluencer.URLFoto = userData.profile_picture_url;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao buscar dados do Instagram.", Severity.Warning);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Salvar()
+    {
+        await form.Validate();
+        if (!form.IsValid) return;
+
+        try
+        {
+            _processing = true;
+            StateHasChanged();
+
+            if (novoItem)
+            {
+                itemInfluencer.ID_Campanha = IDCampanha;
+                itemInfluencer.Senha = "N"; // Default value
+                var criado = await influencerService.CreateInfluencerAsync(itemInfluencer);
+
+                if (criado)
+                {
+                    Snackbar.Add("Influencer criado com sucesso!", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+            }
+            else
+            {
+                var atualizado = await influencerService.UpdateInfluencerAsync(itemInfluencer);
+
+                if (atualizado)
+                {
+                    Snackbar.Add("Influencer atualizado com sucesso!", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao salvar: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _processing = false;
+            StateHasChanged();
+        }
+    }
+}

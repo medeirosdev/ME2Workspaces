@@ -1,0 +1,128 @@
+﻿@rendermode InteractiveServer
+@using MudBlazor
+@using ME2Workspaces.ModulosME2.TarefasInfluencer
+@inject ISnackbar Snackbar
+
+<MudDialog>
+  <TitleContent>
+    @if(novoItem)
+    {
+            <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-2" /> <h2>Criar Tarefa</h2>
+    }
+    else
+    {
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" /> <h2>Editar Tarefa</h2>
+    }
+  </TitleContent>
+  
+  <DialogContent>
+    <MudForm @ref="form">
+      <MudStack Spacing="3">
+        <MudTextField T="string" Label="Descrição" @bind-Value="task.Descricao" Required="true" />
+        
+        <MudSelect T="TipoTarefa" Label="Tipo de Tarefa" @bind-Value="task.Tipo_Tarefa" Required="true">
+          @foreach (var value in Enum.GetValues(typeof(TipoTarefa)))
+          {
+              <MudSelectItem Value="@( (TipoTarefa)value )">@value</MudSelectItem>
+          }
+        </MudSelect>
+        
+        <MudDatePicker Label="Prazo" @bind-Date="@task.Prazo" Required="true" />
+        
+        @if(!novoItem)
+        {
+            <MudTextField T="DateTime" Label="Data de Criação" @bind-Value="task.DataCriacao" Disabled="true" />
+        
+        
+        <MudCheckBox T="bool" Label="Tarefa Concluída" @bind-Value="task.Feito" />
+                }
+      </MudStack>
+    </MudForm>
+  </DialogContent>
+  
+  <DialogActions>
+    <MudButton OnClick="Cancelar" Color="Color.Default">Cancelar</MudButton>
+    <MudButton OnClick="Salvar" Color="Color.Primary">Salvar</MudButton>
+  </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public IMudDialogInstance MudDialog { get; set; }
+
+    // Parâmetros recebidos:
+    [Parameter] public bool novoItem { get; set; }
+    [Parameter] public long ID_Influencer { get; set; }
+    [Parameter] public long IDCampanha { get; set; }
+    [Parameter] public long ID_Usuario { get; set; }
+    [Parameter] public long? taskId { get; set; } // Apenas para edição
+
+    private InfluencerTask task = new InfluencerTask();
+    private MudForm form;
+    private readonly InfluencerTaskService taskService = new InfluencerTaskService();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!novoItem && taskId.HasValue)
+        {
+            task = await taskService.GetTaskById(taskId.Value) ?? new InfluencerTask();
+        }
+        else
+        {
+            // Inicializa uma nova tarefa com valores padrão
+            task = new InfluencerTask
+            {
+                ID_Influencer = ID_Influencer,
+                ID_Campanha = IDCampanha,
+                DataCriacao = DateTime.Now,
+                Prazo = DateTime.Now.AddDays(7), // Prazo padrão de 7 dias
+                Feito = false,
+                Tipo_Tarefa = TipoTarefa.Stories, // Valor padrão
+                Descricao = string.Empty
+            };
+        }
+    }
+
+    private void Cancelar()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task Salvar()
+    {
+        await form.Validate();
+        if (!form.IsValid)
+        {
+            Snackbar.Add("Preencha os campos obrigatórios.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            bool success = false;
+            if (novoItem)
+            {
+                long newId = await taskService.CreateTask(task);
+                success = newId > 0;
+            }
+            else
+            {
+                success = await taskService.UpdateTask(task);
+            }
+
+            if (success)
+            {
+                Snackbar.Add("Tarefa salva com sucesso.", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("Erro ao salvar a tarefa.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+            MudDialog.Cancel();
+        }
+    }
+}

@@ -1,0 +1,20 @@
+CREATE TABLE me2youtubedatachannel (
+    ChannelId VARCHAR(255) NOT NULL PRIMARY KEY,
+    ChannelName VARCHAR(255) NOT NULL,
+    ChannelImage VARCHAR(255),
+    VideoCount INT DEFAULT 0,
+    LikecountTotal BIGINT DEFAULT 0,
+    DislikecountTotal BIGINT DEFAULT 0,
+    CommentcountTotal BIGINT DEFAULT 0,
+    ViewcountTotal BIGINT DEFAULT 0,
+    SubscriberCount BIGINT DEFAULT 0,
+    PublicationDates LONGTEXT, -- Armazenamento de datas pode ser complexo; pode ser necessário usar JSON ou outro formato
+    LikeCounts LONGTEXT, -- Pode ser necessário usar JSON para armazenar listas
+    DislikeCounts LONGTEXT, -- Pode ser necessário usar JSON para armazenar listas
+    CommentCounts LONGTEXT, -- Pode ser necessário usar JSON para armazenar listas
+    ViewCounts LONGTEXT, -- Pode ser necessário usar JSON para armazenar listas
+    Durations LONGTEXT, -- Pode ser necessário usar JSON para armazenar listas
+    Categories LONGTEXT, -- Pode ser necessário usar JSON para armazenar listas
+    Descriptions LONGTEXT, -- Pode ser necessário usar JSON para armazenar listas
+    Score DOUBLE DEFAULT 0
+);

@@ -1,0 +1,355 @@
+﻿@page "/insight-dialog"
+@using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores.AnaliseME2TrackInfluencer
+@using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores.AnalisesInsight
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@inject IDialogService MudDialogService
+@inject ISnackbar Snackbar
+@inject ILogger<InsightDialog> Logger
+
+<MudDialog DisableSidePadding="true" ClassContent="pa-6">
+    <DialogContent>
+
+        <MudPaper Elevation="0" Class="pa-4">
+            <MudText Typo="Typo.h5" Class="mb-4">
+                Insights de @influencerNome
+                <MudText Typo="Typo.subtitle1" Color="Color.Primary">
+                    Campanha: @campanhaNome
+                </MudText>
+            </MudText>
+
+            <MudStack Spacing="3">
+                <MudPaper Elevation="0" Class="py-2">
+                    <MudStack Row="true" Spacing="2" Class="flex-wrap">
+                        <MudButton StartIcon="@Icons.Material.Filled.Add"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="AdicionarInsightAsync">
+                            Adicionar Insight
+                        </MudButton>
+
+                        <MudButton StartIcon="@Icons.Material.Filled.Edit"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="AlterarInsightAsync"
+                                   Disabled="@(!CanAlterInsight)">
+                            Alterar Insight
+                        </MudButton>
+
+                        <MudButton StartIcon="@Icons.Material.Filled.Analytics"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Info"
+                                   OnClick="AbrirAnaliseInsightsAsync">
+                            Análise dos Insights
+                        </MudButton>
+
+                        <MudButton StartIcon="@Icons.Material.Filled.Timeline"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Info"
+                                   OnClick="OnInsightsClickAsync">
+                            ME2 Track
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+
+                @if (isLoading)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+                }
+                else if (!insights.Any())
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">
+                        Nenhum insight encontrado para este influenciador.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudDataGrid T="Insight"
+                                 Dense="true"
+                                 Hover="true"
+                                 Striped="true"
+                                 Items="@insights"
+                                 Filterable="true"
+                                 FilterMode="DataGridFilterMode.Simple"
+                                 SortMode="SortMode.Multiple"
+                                 Groupable="false"
+                                 SelectedItem="@selectedInsight"
+                                 SelectedItemChanged="@OnSelectedInsightChanged"
+                                 MultiSelection="false"
+                                 Loading="@isLoading"
+                                 LoadingProgressColor="Color.Info"
+                                 Class="elevation-1">
+                        <ToolBarContent>
+                            <MudText Typo="Typo.h6">Insights</MudText>
+                            <MudSpacer />
+                            <MudTextField @bind-Value="searchString"
+                                          Placeholder="Pesquisar"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Search"
+                                          IconSize="Size.Medium"
+                                          Class="mt-0 mb-3" />
+                        </ToolBarContent>
+                        <Columns>
+                            <PropertyColumn Property="x => x.DataInclusao"
+                                            Title="Data"
+                                            Format="dd/MM/yyyy"
+                                            SortBy="x => x.DataInclusao" />
+                            <PropertyColumn Property="x => x.TipoInsight"
+                                            Title="Tipo" />
+                            <PropertyColumn Property="x => x.Curtidas"
+                                            Title="Curtidas"
+                                            Format="#,##0" />
+                            <PropertyColumn Property="x => x.Respostas"
+                                            Title="Respostas"
+                                            Format="#,##0" />
+                            <PropertyColumn Property="x => x.Compartilhamentos"
+                                            Title="Compartilhamentos"
+                                            Format="#,##0" />
+                            <PropertyColumn Property="x => x.Visualizacoes"
+                                            Title="Visualizações"
+                                            Format="#,##0" />
+                            <PropertyColumn Property="x => x.Interacoes"
+                                            Title="Interações"
+                                            Format="#,##0" />
+                            <PropertyColumn Property="x => x.ContasAlcancadas"
+                                            Title="Alcance"
+                                            Format="#,##0" />
+                        </Columns>
+                        <PagerContent>
+                            <MudDataGridPager T="Insight" />
+                        </PagerContent>
+                    </MudDataGrid>
+                }
+            </MudStack>
+        </MudPaper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="FecharAsync"
+                   Color="Color.Default"
+                   Variant="Variant.Text">
+            Fechar
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+        [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+        [Parameter] public long ID_Influencer { get; set; }
+        [Parameter] public long IDCampanha { get; set; }
+        [Parameter] public long ID_Usuario { get; set; }
+
+    private List<Insight> insights = new();
+    private Insight? selectedInsight;
+    private string influencerNome = string.Empty;
+    private string campanhaNome = string.Empty;
+    private bool isLoading;
+    private string searchString = string.Empty;
+
+    private bool CanAlterInsight => selectedInsight is not null;
+
+    private readonly InsightService _insightService = new();
+    private readonly InfluencerFormService _influencerService = new();
+    private readonly Me2CampanhaService _campanhaService = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            await Task.WhenAll(
+                CarregarInsightsAsync(),
+                CarregarInformacoesAsync()
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erro ao inicializar o componente InsightDialog");
+            Snackbar.Add("Erro ao carregar os dados. Tente novamente mais tarde.", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task CarregarInsightsAsync()
+    {
+        try
+        {
+            var allInsights = await _insightService.GetInsightsByCampaignId(IDCampanha);
+            insights = allInsights
+                .Where(i => i.ID_Influencer == ID_Influencer)
+                .OrderByDescending(i => i.DataInclusao)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erro ao carregar insights");
+            throw;
+        }
+    }
+
+    private async Task CarregarInformacoesAsync()
+    {
+        try
+        {
+            var influencerTask = _influencerService.GetInfluencerByIdAsync(ID_Influencer);
+            var campanhaTask = _campanhaService.GetCampanhaById(IDCampanha);
+
+            await Task.WhenAll(influencerTask, campanhaTask);
+
+            var influencer = await influencerTask;
+            var campanha = await campanhaTask;
+
+            influencerNome = influencer?.Nome ?? "Influenciador não encontrado";
+            campanhaNome = campanha?.NomeCampanha ?? "Campanha não encontrada";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erro ao carregar informações do influenciador/campanha");
+            throw;
+        }
+    }
+
+    private void OnSelectedInsightChanged(Insight insight)
+    {
+        selectedInsight = insight;
+        StateHasChanged();
+    }
+
+    private async Task AdicionarInsightAsync()
+    {
+        try
+        {
+            var parameters = new DialogParameters
+            {
+                { "novoItem", true },
+                { "ID_Influencer", ID_Influencer },
+                { "IDCampanha", IDCampanha },
+                { "ID_Usuario", ID_Usuario }
+            };
+
+            var dialog = await MudDialogService.ShowAsync<InsightAlterarDialog>(
+                "Novo Insight",
+                parameters,
+                new DialogOptions { MaxWidth = MaxWidth.Medium }
+            );
+
+            if (await dialog.Result == DialogResult.Ok(true))
+            {
+                await CarregarInsightsAsync();
+                Snackbar.Add("Insight adicionado com sucesso!", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erro ao adicionar insight");
+            Snackbar.Add("Erro ao adicionar insight. Tente novamente.", Severity.Error);
+        }
+    }
+
+    private async Task AlterarInsightAsync()
+    {
+        if (selectedInsight is null)
+        {
+            Snackbar.Add("Selecione um insight para editar!", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var parameters = new DialogParameters
+            {
+                { "novoItem", false },
+                { "ID_Influencer", ID_Influencer },
+                { "IDCampanha", IDCampanha },
+                { "ID_Usuario", ID_Usuario },
+                { "insightId", selectedInsight.Id }
+            };
+
+            var dialog = await MudDialogService.ShowAsync<InsightAlterarDialog>(
+                "Editar Insight",
+                parameters,
+                new DialogOptions { MaxWidth = MaxWidth.Medium }
+            );
+
+            if (await dialog.Result == DialogResult.Ok(true))
+            {
+                await CarregarInsightsAsync();
+                Snackbar.Add("Insight atualizado com sucesso!", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erro ao alterar insight");
+            Snackbar.Add("Erro ao alterar insight. Tente novamente.", Severity.Error);
+        }
+    }
+
+    private async Task AbrirAnaliseInsightsAsync()
+    {
+        try
+        {
+            var parameters = new DialogParameters
+            {
+                { "ID_Influencer", ID_Influencer },
+                { "IDCampanha", IDCampanha },
+                { "ID_Usuario", ID_Usuario }
+            };
+
+            var options = new DialogOptions
+                {
+                    MaxWidth = MaxWidth.Large,
+                    CloseButton = true,
+                    FullWidth = true
+                };
+
+            var dialog = await MudDialogService.ShowAsync<InsightsGraficos>(
+                "Análise dos Insights",
+                parameters,
+                options
+            );
+
+            await dialog.Result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erro ao abrir análise de insights");
+            Snackbar.Add("Erro ao abrir análise. Tente novamente.", Severity.Error);
+        }
+    }
+
+    private async Task OnInsightsClickAsync()
+    {
+        try
+        {
+            var parameters = new DialogParameters<ME2TrackInfluencer>
+            {
+                { x => x.ID_Influencer, ID_Influencer },
+                { x => x.IDCampanha, IDCampanha },
+                { x => x.ID_Usuario, ID_Usuario }
+            };
+
+            var dialog = await MudDialogService.ShowAsync<ME2TrackInfluencer>(
+                "ME2 Track do Influenciador",
+                parameters,
+                new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true }
+            );
+
+            await dialog.Result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erro ao abrir ME2 Track");
+            Snackbar.Add("Erro ao abrir ME2 Track. Tente novamente.", Severity.Error);
+        }
+    }
+
+    private async Task FecharAsync()
+    {
+        MudDialog.Cancel();
+    }
+}

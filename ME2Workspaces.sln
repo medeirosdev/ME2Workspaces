@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.34928.147
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ME2Workspaces", "ME2Workspaces\ME2Workspaces.csproj", "{0633417B-EB39-4131-B7FE-17C80792B74B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ME2Workspaces.Client", "ME2Workspaces.Client\ME2Workspaces.Client.csproj", "{0FB5573A-7AFF-4024-9DEB-0CD9508AEA2A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0633417B-EB39-4131-B7FE-17C80792B74B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0633417B-EB39-4131-B7FE-17C80792B74B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0633417B-EB39-4131-B7FE-17C80792B74B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0633417B-EB39-4131-B7FE-17C80792B74B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FB5573A-7AFF-4024-9DEB-0CD9508AEA2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FB5573A-7AFF-4024-9DEB-0CD9508AEA2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FB5573A-7AFF-4024-9DEB-0CD9508AEA2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FB5573A-7AFF-4024-9DEB-0CD9508AEA2A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DBB91EBA-8C13-4E0F-AB55-8A7DD1E09D31}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,315 @@
+﻿@rendermode InteractiveServer
+@layout LayoutVazio
+@page "/tarefasinfluenciador/{CampanhaId}/{InfluenciadorId}"
+@using ME2Workspaces.Components.Layout
+@using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores
+@using ME2Workspaces.ModulosME2.TarefasInfluencer
+@using MudBlazor
+@inject ISnackbar Snackbar
+@inject IDialogService MudDialogService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+    <!-- Header Section -->
+    <MudPaper Elevation="0" Class="mb-6">
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg" Style="background: linear-gradient(45deg, var(--mud-palette-warning) 30%, var(--mud-palette-warning-darken) 90%)">
+                    <MudStack>
+                        <MudText Typo="Typo.subtitle2" Color="Color.Surface">TAREFAS PENDENTES</MudText>
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Surface" Class="mr-2" Size="Size.Large"/>
+                            <MudText Typo="Typo.h3" Color="Color.Surface">@tarefasPendentes</MudText>
+                        </div>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg" Style="background: linear-gradient(45deg, var(--mud-palette-error) 30%, var(--mud-palette-error-darken) 90%)">
+                    <MudStack>
+                        <MudText Typo="Typo.subtitle2" Color="Color.Surface">TAREFAS VENCIDAS</MudText>
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Surface" Class="mr-2" Size="Size.Large"/>
+                            <MudText Typo="Typo.h3" Color="Color.Surface">@tarefasVencidas</MudText>
+                        </div>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg" Style="background: linear-gradient(45deg, var(--mud-palette-success) 30%, var(--mud-palette-success-darken) 90%)">
+                    <MudStack>
+                        <MudText Typo="Typo.subtitle2" Color="Color.Surface">TAREFAS CONCLUÍDAS</MudText>
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Surface" Class="mr-2" Size="Size.Large"/>
+                            <MudText Typo="Typo.h3" Color="Color.Surface">@tarefasConcluidas</MudText>
+                        </div>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Tasks Section -->
+    <MudCard Elevation="2" Class="rounded-lg">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <div class="d-flex align-center gap-4">
+                    <MudIcon Icon="@Icons.Material.Filled.AssignmentInd" Size="Size.Large" />
+                    <div>
+                        <MudText Typo="Typo.h5">Minhas Tarefas</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Gerencie suas tarefas da campanha</MudText>
+                    </div>
+                </div>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudTextField 
+                    @bind-Value="searchString" 
+                    Placeholder="Pesquisar tarefas..." 
+                    Adornment="Adornment.Start" 
+                    AdornmentIcon="@Icons.Material.Filled.Search" 
+                    Class="mt-0"/>
+            </CardHeaderActions>
+        </MudCardHeader>
+
+        <MudCardContent>
+            <MudTable Dense="true"
+                      Hover="true"
+                      Elevation="0"
+                      Loading="@isLoading"
+                      LoadingProgressColor="Color.Primary"
+                      Items="@(tarefas?.Where(t => string.IsNullOrEmpty(searchString) || 
+                                                  t.Descricao.Contains(searchString, StringComparison.OrdinalIgnoreCase)))"
+                      Breakpoint="Breakpoint.Sm"
+                      RowsPerPage="10">
+                <HeaderContent>
+                    <MudTh Style="width: 50px">Status</MudTh>
+                    <MudTh>Descrição</MudTh>
+                    <MudTh Style="width: 150px">Tipo</MudTh>
+                    <MudTh Style="width: 120px">Prazo</MudTh>
+                    <MudTh Style="width: 120px">Criado Em</MudTh>
+                    <MudTh Style="width: 180px">Ações</MudTh>
+                </HeaderContent>
+
+                <RowTemplate Context="tarefa">
+                    <MudTd DataLabel="Status">
+                        <MudCheckBox T="bool"
+                            @bind-Checked="tarefa.Feito"
+                            Color="@(IsTaskOverdue(tarefa) ? Color.Error : Color.Primary)"
+                            OnCheckedChanged="@(async () => await OnTaskStatusChanged(tarefa))"
+                            Size="Size.Large" />
+                    </MudTd>
+                    <MudTd DataLabel="Descrição">
+                        <MudText Color="@(IsTaskOverdue(tarefa) ? Color.Error : Color.Default)"
+                                Style="@(tarefa.Feito ? "text-decoration: line-through" : null)">
+                            @tarefa.Descricao
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Tipo">
+                        <MudChip Size="Size.Small" T="string"
+                            Color="@GetTipoTarefaColor(tarefa.Tipo_Tarefa)"
+                            Icon="@GetTipoTarefaIcon(tarefa.Tipo_Tarefa)">
+                            @GetTipoTarefaText(tarefa.Tipo_Tarefa)
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Prazo">
+                        <MudChip Size="Size.Small" T="string"
+                            Color="@(IsTaskOverdue(tarefa) ? Color.Error : Color.Default)"
+                            Icon="@Icons.Material.Filled.Event">
+                            @tarefa.Prazo.ToString()
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Criado Em">
+                        @tarefa.DataCriacao.ToString("dd/MM/yyyy")
+                    </MudTd>
+                    <MudTd DataLabel="Ações">
+                        <MudButton 
+                            Variant="Variant.Filled" 
+                            Color="Color.Primary"
+                            StartIcon="@Icons.Material.Filled.Analytics"
+                            Size="Size.Small"
+                            OnClick="@(() => AbrirDialogoInsights(tarefa))">
+                            Entregar
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+
+                <PagerContent>
+                    <MudTablePager />
+                </PagerContent>
+
+                <NoRecordsContent>
+                    <MudText Class="pa-4" Align="Align.Center">
+                        Nenhuma tarefa encontrada
+                    </MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    [Parameter] public string CampanhaId { get; set; }
+    [Parameter] public string InfluenciadorId { get; set; }
+
+    private List<InfluencerTask>? tarefas = new();
+    private int tarefasPendentes = 0;
+    private int tarefasVencidas = 0;
+    private int tarefasConcluidas = 0;
+    private bool isLoading = false;
+    private string searchString = "";
+    private readonly InfluencerTaskService taskService = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarDados();
+    }
+
+    private async Task CarregarDados()
+    {
+        try
+        {
+            isLoading = true;
+            await CarregarTarefas();
+            CalcularEstatisticas();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao carregar tarefas: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CarregarTarefas()
+    {
+        tarefas = await taskService.GetTasksByCampaignAndInfluencer(
+            long.Parse(CampanhaId), 
+            long.Parse(InfluenciadorId)
+        );
+    }
+
+    private void CalcularEstatisticas()
+    {
+        var hoje = DateTime.Today;
+
+        tarefasPendentes = tarefas?.Count(t => !t.Feito) ?? 0;
+        tarefasVencidas = tarefas?.Count(t => !t.Feito && t.Prazo < hoje) ?? 0;
+        tarefasConcluidas = tarefas?.Count(t => t.Feito) ?? 0;
+    }
+
+    private bool IsTaskOverdue(InfluencerTask tarefa)
+    {
+        return !tarefa.Feito && tarefa.Prazo < DateTime.Today;
+    }
+
+    private Color GetTipoTarefaColor(TipoTarefa tipo)
+    {
+        return tipo switch
+        {
+            TipoTarefa.Stories => Color.Info,
+            TipoTarefa.Publicacao => Color.Success,
+            TipoTarefa.Reels => Color.Secondary,
+            _ => Color.Default
+        };
+    }
+
+    private string GetTipoTarefaIcon(TipoTarefa tipo)
+    {
+        return tipo switch
+        {
+            TipoTarefa.Stories => Icons.Material.Filled.PhotoCamera,
+            TipoTarefa.Publicacao => Icons.Material.Filled.PostAdd,
+            TipoTarefa.Reels => Icons.Material.Filled.VideoLibrary,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+
+    private string GetTipoTarefaText(TipoTarefa tipo)
+    {
+        return tipo switch
+        {
+            TipoTarefa.Stories => "Stories",
+            TipoTarefa.Publicacao => "Publicação",
+            TipoTarefa.Reels => "Reels",
+            _ => "Desconhecido"
+        };
+    }
+
+    private async Task OnTaskStatusChanged(InfluencerTask tarefa)
+    {
+        try
+        {
+            var originalStatus = !tarefa.Feito; // Guarda o status original antes da mudança
+            var success = await taskService.UpdateTask(tarefa);
+            
+            if (success)
+            {
+                CalcularEstatisticas();
+                Snackbar.Add(
+                    tarefa.Feito ? "Tarefa concluída com sucesso!" : "Tarefa marcada como pendente",
+                    tarefa.Feito ? Severity.Success : Severity.Info,
+                    config => 
+                    { 
+                        config.ShowCloseIcon = true;
+                        config.VisibleStateDuration = 2000;
+                        config.HideIcon = false;
+                    }
+                );
+            }
+            else
+            {
+                // Reverte o status se a atualização falhar
+                tarefa.Feito = originalStatus;
+                Snackbar.Add("Não foi possível atualizar o status da tarefa.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Reverte o status em caso de erro
+            tarefa.Feito = !tarefa.Feito;
+            Snackbar.Add($"Erro ao atualizar status: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task AbrirDialogoInsights(InfluencerTask tarefa)
+    {
+        try
+        {
+            var parameters = new DialogParameters
+            {
+                { "novoItem", true },
+                { "ID_Influencer", Convert.ToInt64(InfluenciadorId) },
+                { "IDCampanha", Convert.ToInt64(CampanhaId) },
+                { "ID_Usuario", Convert.ToInt64(777) }
+            };
+
+            var dialog = await MudDialogService.ShowAsync<InsightAlterarDialog>(
+                "Novo Insight",
+                parameters,
+                new DialogOptions 
+                { 
+                    MaxWidth = MaxWidth.Medium,
+                    CloseButton = true
+                }
+            );
+
+            if (await dialog.Result == DialogResult.Ok(true))
+            {
+                Snackbar.Add("Insight adicionado com sucesso!", Severity.Success);
+                await CarregarDados(); // Recarrega os dados após adicionar o insight
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao adicionar insight: " + ex.Message, Severity.Error);
+        }
+    }
+}

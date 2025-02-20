@@ -1,0 +1,42 @@
+
+
+
+// exemplo influencer
+INSERT INTO tabela_influencers_data (
+    ID_Campanha,
+    Senha,
+    URLFoto,
+    SeloME2,
+    Email,
+    Telefone,
+    Instagram,
+    TikTok,
+    YouTube,
+    Nome,
+    Idade,
+    Regiao,
+    CategoriaA,
+    CategoriaB,
+    CategoriaC,
+    CategoriaD,
+    OutrasRedes
+) 
+VALUES (
+    1,                               -- ID_Campanha
+    '123456',                        -- Senha
+    'https://example.com/foto.jpg',  -- URLFoto
+    1,                               -- SeloME2
+    'teste@example.com',             -- Email
+    '11999999999',                   -- Telefone
+    'insta_teste',                   -- Instagram
+    'tiktok_teste',                  -- TikTok
+    'youtube_teste',                 -- YouTube
+    'Fulano de Tal',                 -- Nome
+    25,                              -- Idade
+    3,                               -- Regiao (Ex.: 3 = Sudeste, se 0=Norte,1=Nordeste,2=CentroOeste,3=Sudeste,4=Sul)
+    1,                               -- CategoriaA (Ex.: 1 = Tecnologia)
+    2,                               -- CategoriaB (Ex.: 2 = Beleza)
+    3,                               -- CategoriaC (Ex.: 3 = Esportes)
+    4,                               -- CategoriaD (Ex.: 4 = Comida)
+    'Nenhuma no momento'            -- OutrasRedes
+);
