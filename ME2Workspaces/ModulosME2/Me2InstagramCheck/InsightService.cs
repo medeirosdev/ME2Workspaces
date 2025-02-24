@@ -165,6 +165,16 @@ public class InsightService
         }
     }
 
+    public async Task<List<Insight>> GetInsights()
+    {
+        using (var connection = await _connectionDB.NewConnection())
+        {
+            var query = "SELECT * FROM insight";
+            var insights = await connection.QueryAsync<Insight>(query);
+            return insights.AsList();
+        }
+    }
+
     public async Task<List<Insight>> GetInsightsByCampaignId(long campaignId)
     {
         using (var connection = await _connectionDB.NewConnection())

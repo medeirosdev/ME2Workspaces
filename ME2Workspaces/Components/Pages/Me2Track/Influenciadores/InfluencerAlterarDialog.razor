@@ -46,7 +46,7 @@
                                     <MudItem xs="12" sm="6">
                                         <MudTextField @bind-Value="itemInfluencer.Nome"
                                                       Label="Nome"
-                                                      Variant="Variant.Outlined"
+                                                      Variant="Variant.Filled"
                                                       Required="true"
                                                       RequiredError="Nome é obrigatório"
                                                       MaxLength="100" />
@@ -55,7 +55,7 @@
                                     <MudItem xs="12" sm="6">
                                         <MudTextField @bind-Value="itemInfluencer.Email"
                                                       Label="Email"
-                                                      Variant="Variant.Outlined"
+                                                      Variant="Variant.Filled"
                                                       Required="true"
                                                       RequiredError="Email é obrigatório"
                                                       MaxLength="150" />
@@ -64,7 +64,7 @@
                                     <MudItem xs="12" sm="6">
                                         <MudTextField @bind-Value="itemInfluencer.Telefone"
                                                       Label="Telefone"
-                                                      Variant="Variant.Outlined"
+                                                      Variant="Variant.Filled"
                            
                                                       MaxLength="15" />
                                     </MudItem>
@@ -72,7 +72,7 @@
                                     <MudItem xs="12" sm="6">
                                         <MudNumericField @bind-Value="itemInfluencer.Idade"
                                                          Label="Idade"
-                                                         Variant="Variant.Outlined"
+                                                         Variant="Variant.Filled"
                                                          Min="0"
                                                          Max="120" />
                                     </MudItem>
@@ -86,7 +86,7 @@
                                     <MudItem xs="12" sm="6">
                                         <MudTextField @bind-Value="itemInfluencer.Instagram"
                                                       Label="Instagram"
-                                                      Variant="Variant.Outlined"
+                                                      Variant="Variant.Filled"
                                                       Adornment="Adornment.Start"
                                                       AdornmentIcon="@Icons.Custom.Brands.Instagram"
                                                       OnBlur="@(async () => await FetchInstagramData())" />
@@ -95,7 +95,7 @@
                                     <MudItem xs="12" sm="6">
                                         <MudTextField @bind-Value="itemInfluencer.YouTube"
                                                       Label="YouTube"
-                                                      Variant="Variant.Outlined"
+                                                      Variant="Variant.Filled"
                                                       Adornment="Adornment.Start"
                                                       AdornmentIcon="@Icons.Custom.Brands.YouTube" />
                                     </MudItem>
@@ -103,7 +103,7 @@
                                     <MudItem xs="12" sm="6">
                                         <MudTextField @bind-Value="itemInfluencer.TikTok"
                                                       Label="TikTok"
-                                                      Variant="Variant.Outlined"
+                                                      Variant="Variant.Filled"
                                                       Adornment="Adornment.Start"
                                                       AdornmentIcon="@Icons.Custom.Brands.TikTok" />
                                     </MudItem>

@@ -172,8 +172,7 @@
     private decimal engagementRate;
     private decimal mediaInsightsPorCampanha;
     private decimal mediaInfluencersPorCampanha;
-    public string storedEmail { get; set; }
-    public AuthUserModel dadosSessaoUsuario { get; set; }
+    
 
     // Chart Data
     private List<ChartSeries> insightsSeries = new();
@@ -189,12 +188,34 @@
         await InitializeChartData();
     }
 
+    public string storedEmail { get; set; }
+    public AuthUserModel dadosSessaoUsuario { get; set; }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             await VerificarLogin();
             await CarregarCampanhas();
+        }
+    }
+
+    public async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                var userService = new UserService();
+                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+                if (dadosSessaoUsuario == null)
+                    NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
         }
     }
 
@@ -227,24 +248,7 @@
         StateHasChanged();
     }
 
-    public async Task VerificarLogin()
-    {
-        try
-        {
-            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
-            if (!string.IsNullOrEmpty(storedEmail))
-            {
-                var userService = new UserService();
-                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
-                if (dadosSessaoUsuario == null)
-                    NavigationManager.NavigateTo("/");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
-        }
-    }
+    
 
     private async Task CarregarTopInfluencers()
     {

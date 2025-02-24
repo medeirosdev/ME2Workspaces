@@ -263,6 +263,12 @@
                 new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true }
             );
 
+            if (await dialog.Result == DialogResult.Ok(true))
+            {
+                await CarregarInfluencers();
+                Snackbar.Add("Influenciador criado com sucesso!", Severity.Success);
+            }
+
             if (!dialog.Result.IsCanceled)
             {
                 await CarregarInfluencers();
@@ -300,10 +306,16 @@
                 new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true }
             );
 
-            if (!dialog.Result.IsCanceled)
+            if (await dialog.Result == DialogResult.Ok(true))
             {
                 await CarregarInfluencers();
                 Snackbar.Add("Influenciador atualizado com sucesso!", Severity.Success);
+            }
+
+            if (!dialog.Result.IsCanceled)
+            {
+                await CarregarInfluencers();
+                Snackbar.Add("Influenciador criado com sucesso!", Severity.Success);
             }
         }
         catch (Exception ex)
