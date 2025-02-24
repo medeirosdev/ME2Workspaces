@@ -13,9 +13,16 @@
     <PackageReference Include="Google.Apis.YouTube.v3" Version="1.68.0.3653" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.5" />
+    <PackageReference Include="Microsoft.ML" Version="4.0.1" />
+    <PackageReference Include="Microsoft.ML.DataView" Version="4.0.1" />
     <PackageReference Include="MudBlazor" Version="8.0.0" />
     <PackageReference Include="MySql.Data" Version="9.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="tessdata\tessconfigs\" />
   </ItemGroup>
 
 </Project>

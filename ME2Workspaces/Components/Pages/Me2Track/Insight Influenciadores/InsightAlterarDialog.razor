@@ -1,8 +1,14 @@
-﻿@rendermode InteractiveServer
-@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+﻿@page "/insights"
+
+@using System.Text.RegularExpressions
+@using Tesseract
 @using MudBlazor
+@using Microsoft.AspNetCore.Components.Forms
+@using Me2Workspaces.ModulosME2.Influencer
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
 @using Me2Workspaces.ModulosME2.Me2InstagramCheck
 @using ME2Workspaces.ModulosME2.TarefasInfluencer
+
 @inject ISnackbar Snackbar
 
 <MudDialog Style="width: 800px; max-height: 90vh;">
@@ -55,8 +61,57 @@
                                     }
                                 </MudSelect>
                             </MudItem>
+
+                            <!-- Selecionar o idioma para OCR -->
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="string"
+                                           Label="Idioma OCR"
+                                           @bind-Value="selectedLanguage"
+                                           Required="true"
+                                           RequiredError="Selecione um idioma"
+                                           AnchorOrigin="Origin.BottomCenter">
+                                    <MudSelectItem Value="languageEng">Inglês</MudSelectItem>
+                                    <MudSelectItem Value="languagePor">Português</MudSelectItem>
+                                    <MudSelectItem Value="languageSpa">Espanhol</MudSelectItem>
+                                    <!-- Adicione outros códigos de idioma conforme seus arquivos no tessdata -->
+                                </MudSelect>
+                            </MudItem>
+
+                            <!-- Upload de Imagem via MudFileUpload -->
+                            <MudItem xs="12" sm="6" Class="d-flex align-center">
+                                <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles">
+                                    <ActivatorContent>
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image">
+                                            Upload Imagem
+                                        </MudButton>
+                                    </ActivatorContent>
+                                </MudFileUpload>
+                            </MudItem>
                         </MudGrid>
                     </MudPaper>
+                </MudItem>
+
+                <!-- Seção para exibir arquivos e botão de "Ler Imagem" -->
+                <MudItem xs="12">
+                    @if (files != null && files.Count > 0)
+                    {
+                        <MudText Typo="@Typo.h6">@files.Count() Arquivo@(files.Count() == 1 ? "" : "s"):</MudText>
+                        <MudList T="string">
+                            @foreach (var file in files)
+                            {
+                                <MudListItem Icon="@Icons.Material.Filled.AttachFile" @key="@file">
+                                    @file.Name <code>@file.Size bytes</code>
+                                </MudListItem>
+                            }
+                        </MudList>
+
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="ProcessImage"
+                                   Disabled="!(files?.Count > 0)">
+                            Ler Imagem
+                        </MudButton>
+                    }
                 </MudItem>
 
                 <!-- Métricas de Alcance -->
@@ -206,10 +261,20 @@
     [Parameter] public long IDCampanha { get; set; }
     [Parameter] public long ID_Usuario { get; set; }
 
+    public string languageEng { get; set; } = "eng";
+    public string languagePor { get; set; } = "por";
+    public string languageSpa { get; set; } = "spa";
+
     private MudForm form = default!;
     private Insight insight = new();
     private bool _isSaving;
     private readonly InsightService insightService = new();
+
+    // Idioma selecionado para OCR (padrão "eng")
+    private string selectedLanguage = "por";
+
+    // Lista de arquivos enviados via MudFileUpload
+    private IList<IBrowserFile> files = new List<IBrowserFile>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -231,15 +296,15 @@
             else
             {
                 insight = new Insight
-                    {
-                        DataInclusao = DateTime.Now,
-                        ID_Influencer = ID_Influencer,
-                        ID_Campanha = IDCampanha,
-                        ID_Usuario = ID_Usuario,
-                        // Inicializa com zeros
-                        TipoInsight = 0,
-                        AtividadeDoPerfil = 0
-                    };
+                {
+                    DataInclusao = DateTime.Now,
+                    ID_Influencer = ID_Influencer,
+                    ID_Campanha = IDCampanha,
+                    ID_Usuario = ID_Usuario,
+                    // Inicializa com zeros
+                    TipoInsight = 0,
+                    AtividadeDoPerfil = 0
+                };
             }
         }
         catch (Exception ex)
@@ -296,6 +361,172 @@
         if (_isSaving) return;
         MudDialog.Cancel();
     }
+
+    // Método chamado pelo componente MudFileUpload
+    private void UploadFiles(IBrowserFile file)
+    {
+        files.Add(file);
+    }
+
+    // Quando clicamos em "Ler Imagem", processamos o OCR
+    private async Task ProcessImage()
+    {
+        if (files == null || files.Count == 0)
+        {
+            Snackbar.Add("Por favor, faça o upload de uma imagem.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var file = files[0];
+
+            // Ler o conteúdo do arquivo em memória
+            using var memoryStream = new MemoryStream();
+            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            // Salvar em arquivo temporário (cuidado em produção)
+            var tempFile = Path.GetTempFileName();
+            using (var fileStream = File.Create(tempFile))
+            {
+                memoryStream.WriteTo(fileStream);
+            }
+
+            // Executa OCR com o idioma selecionado
+            using var engine = new TesseractEngine(@"./tessdata", selectedLanguage, EngineMode.Default);
+            using var img = Pix.LoadFromFile(tempFile);
+            using var page = engine.Process(img);
+
+            var textoExtraido = page.GetText();
+            File.Delete(tempFile);
+
+            // Processa o texto extraído para preencher as métricas
+            ProcessarTextoOCR(textoExtraido);
+
+            Snackbar.Add("Imagem processada e dados extraídos com sucesso!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao processar a imagem: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // Aqui extraímos as métricas desejadas do texto
+    private void ProcessarTextoOCR(string texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+        {
+            Snackbar.Add("Nenhum texto reconhecido no print.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            // Pré-processa o texto para facilitar regex
+            // - remove pontos de milhares
+            // - substitui vírgula por ponto (caso haja decimais)
+            var textoProcessado = texto
+                .Replace(".", "")
+                .Replace(",", ".");
+
+            // Dicionário para armazenar os valores encontrados
+            var valoresEncontrados = new Dictionary<string, long>();
+
+            // Padrões de regex para cada métrica
+            var padroes = new Dictionary<string, string[]>
+        {
+            {"visualizacoes", new[] {
+                @"visualiza[cç][õãa]o(?:es)?[:\s]*(\d+)",
+                @"visualizac(?:oes|ões)?[:\s]*(\d+)",
+                @"(\d+)\s*visualiza[cç][õãa](?:es)?"
+            }},
+            {"interacoes", new[] {
+                @"intera[cç][õãa](?:es)?[:\s]*(\d+)",
+                @"(\d+)\s*intera[cç][õãa](?:es)?"
+            }},
+            {"toques", new[] {
+                @"toques?\s+(?:na\s+)?figurinha[:\s]*(\d+)",
+                @"(\d+)\s*toques?\s+(?:na\s+)?figurinha"
+            }},
+            {"cliques", new[] {
+                @"cliques?\s+(?:no\s+)?link[:\s]*(\d+)",
+                @"(\d+)\s*cliques?\s+(?:no\s+)?link"
+            }},
+            {"contas_alcancadas", new[] {
+                @"contas\s+alcan[cç]adas[:\s]*(\d+)",
+                @"(\d+)\s*contas\s+alcan[cç]adas"
+            }},
+            {"contas_engajamento", new[] {
+                @"contas\s+com\s+engajamento[:\s]*(\d+)",
+                @"(\d+)\s*contas\s+com\s+engajamento"
+            }},
+            {"avanco", new[] {
+                @"avan[cç]o[:\s]*(\d+)",
+                @"(\d+)\s*avan[cç]os?"
+            }},
+            {"compartilhamentos", new[] {
+                @"compartilhamentos?[:\s]*(\d+)",
+                @"(\d+)\s*compartilhamentos?"
+            }},
+            // etc. se houver outras métricas
+        };
+
+            // Tenta casar cada padrão
+            foreach (var (tipo, patterns) in padroes)
+            {
+                foreach (var pattern in patterns)
+                {
+                    var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+                    var match = regex.Match(textoProcessado);
+
+                    if (match.Success && long.TryParse(match.Groups[1].Value, out long valor))
+                    {
+                        valoresEncontrados[tipo] = valor;
+                        break; // se encontrou, não precisa testar os outros padrões
+                    }
+                }
+            }
+
+            // Atribui ao objeto insight
+            if (valoresEncontrados.TryGetValue("visualizacoes", out long vis))
+                insight.Visualizacoes = vis;
+
+            if (valoresEncontrados.TryGetValue("interacoes", out long inter))
+                insight.Interacoes = inter;
+
+            if (valoresEncontrados.TryGetValue("toques", out long toques))
+                insight.AlcanceSeguidores = (int)toques;
+
+            if (valoresEncontrados.TryGetValue("cliques", out long cliques))
+                insight.ContasAlcancadas = (int)cliques;
+
+            if (valoresEncontrados.TryGetValue("contas_engajamento", out long contasEng))
+                insight.ContasComEngajamento = (int)contasEng;
+
+            if (valoresEncontrados.TryGetValue("avanco", out long avanco))
+                insight.Avanco = (int)avanco;
+
+            if (valoresEncontrados.TryGetValue("compartilhamentos", out long compart))
+                insight.Compartilhamentos = (int)compart;
+
+            // Exemplo de log para debug
+            Console.WriteLine("Valores extraídos:");
+            foreach (var kvp in valoresEncontrados)
+            {
+                Console.WriteLine($" - {kvp.Key}: {kvp.Value}");
+            }
+
+            // Atualiza a tela com os novos valores
+            Snackbar.Add($"Foram encontrados {valoresEncontrados.Count} valores nos insights!", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao processar o texto: {ex.Message}", Severity.Error);
+        }
+    }
+
 }
 
 <style>

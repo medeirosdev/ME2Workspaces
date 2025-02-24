@@ -1,0 +1,483 @@
+﻿@page "/previsao-resultados"
+@rendermode InteractiveServer
+@using Microsoft.ML
+@using Microsoft.ML.Data
+@using MudBlazor
+@inject ISnackbar Snackbar
+@using ME2Workspaces.Components.Pages.Me2Track.Campanhas.Me2TrackCampanha
+@using ME2Workspaces.Components.Pages.Me2Track.Influenciadores.Tarefas
+@using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@using MudBlazor
+@using ME2Workspaces.Components.Pages.Me2Track.Influenciadores
+@using MudBlazor
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudText Typo="Typo.h4" Class="mb-4">Previsão de Resultados (ML)</MudText>
+        </MudItem>
+        <MudItem xs="12">
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                <MudTabPanel Text="Previsões" Icon="@Icons.Material.Filled.Timeline">
+                    <!-- Filtros -->
+                    <MudPaper Class="pa-4 mb-4">
+                        <MudGrid>
+                            <MudItem xs="12" sm="3">
+                                <MudSelect T="Me2CampanhaModelo" Label="Campanha"
+                                           ValueChanged="@OnCampanhaSelected"
+                                           Value="@selectedCampanha">
+                                    <MudSelectItem T="Me2CampanhaModelo" Value="@null">Todas as Campanhas</MudSelectItem>
+                                    @foreach (var campanha in campanhas)
+                                    {
+                                        <MudSelectItem Value="@campanha">@campanha.NomeCampanha</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="3">
+                                <MudSelect T="InfluencerModel" Label="Influenciador"
+                                           ValueChanged="@OnInfluencerSelected"
+                                           Value="@selectedInfluencer"
+                                           Disabled="@(selectedCampanha == null)">
+                                    <MudSelectItem T="InfluencerModel" Value="@null">Todos os Influenciadores</MudSelectItem>
+                                    @foreach (var influencer in influencers)
+                                    {
+                                        <MudSelectItem Value="@influencer">@influencer.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="3">
+                                <MudSelect T="TipoRedeSocial?" Label="Rede Social"
+                                           ValueChanged="@OnRedeSocialSelected"
+                                           Value="@selectedRedeSocial">
+                                    <MudSelectItem Value="@((TipoRedeSocial?)null)">Todas as Redes</MudSelectItem>
+                                    @foreach (var rede in Enum.GetValues<TipoRedeSocial>())
+                                    {
+                                        <MudSelectItem Value="@((TipoRedeSocial?)rede)">@rede.ToString()</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="3">
+                                <MudNumericField @bind-Value="@diasPrevisao"
+                                                 Label="Dias para Previsão"
+                                                 Min="1" Max="90" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+
+                    <!-- KPI Cards com Previsões -->
+                    <MudGrid Class="mb-4">
+                        <MudItem xs="12" sm="3">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #6a1b9a, #4a148c);">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Previsão de Visualizações</MudText>
+                                <MudText Typo="Typo.h4" Style="color: #e1bee7;">@previsaoVisualizacoes.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: white;">
+                                    Confiança: @(confiancaVisualizacoes.ToString("P1"))
+                                </MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="3">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #6a1b9a, #4a148c);">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Previsão de Engajamento</MudText>
+                                <MudText Typo="Typo.h4" Style="color: #e1bee7;">@previsaoEngajamento.ToString("P2")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: white;">
+                                    Confiança: @(confiancaEngajamento.ToString("P1"))
+                                </MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="3">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #6a1b9a, #4a148c);">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Previsão de Conversões</MudText>
+                                <MudText Typo="Typo.h4" Style="color: #e1bee7;">@previsaoConversoes.ToString("N0")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: white;">
+                                    Confiança: @(confiancaConversoes.ToString("P1"))
+                                </MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="3">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #6a1b9a, #4a148c);">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">ROI Previsto</MudText>
+                                <MudText Typo="Typo.h4" Style="color: #e1bee7;">@roiPrevisto.ToString("P2")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: white;">
+                                    Confiança: @(confiancaROI.ToString("P1"))
+                                </MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+
+                    <!-- Gráficos de Previsão -->
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Line"
+                                          ChartSeries="@seriesPrevisaoEngajamento"
+                                          XAxisLabels="@labelsPrevisao"
+                                          Width="100%" Height="300px" />
+                                <MudText Typo="Typo.subtitle1" Align="Align.Center">Previsão de Engajamento</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Line"
+                                          ChartSeries="@seriesPrevisaoVisualizacoes"
+                                          XAxisLabels="@labelsPrevisao"
+                                          Width="100%" Height="300px" />
+                                <MudText Typo="Typo.subtitle1" Align="Align.Center">Previsão de Visualizações</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+
+                    <!-- Tabela de Previsões Detalhadas -->
+                    <MudPaper Class="pa-4 mt-4">
+                        <MudTable Items="@previsoesDetalhadas" Dense="true" Hover="true" Bordered="true">
+                            <HeaderContent>
+                                <MudTh>Período</MudTh>
+                                <MudTh>Métrica</MudTh>
+                                <MudTh>Valor Previsto</MudTh>
+                                <MudTh>Intervalo de Confiança</MudTh>
+                                <MudTh>Tendência</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.Periodo</MudTd>
+                                <MudTd>@context.Metrica</MudTd>
+                                <MudTd>@context.ValorPrevisto</MudTd>
+                                <MudTd>@context.IntervaloConfianca</MudTd>
+                                <MudTd>
+                                    <MudIcon Icon="@(context.Tendencia > 0 ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown)"
+                                             Color="@(context.Tendencia > 0 ? Color.Success : Color.Error)" />
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudPaper>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Configurações ML" Icon="@Icons.Material.Filled.Settings">
+                    <MudPaper Class="pa-4">
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="string" Label="Algoritmo de ML"
+                                           @bind-Value="@selectedAlgoritmo">
+                                    <MudSelectItem Value="@("fastforest")">Fast Forest</MudSelectItem>
+                                    <MudSelectItem Value="@("fasttree")">Fast Tree</MudSelectItem>
+                                    <MudSelectItem Value="@("lightgbm")">LightGBM</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudNumericField @bind-Value="@janelaTreinamento"
+                                                 Label="Janela de Treinamento (dias)"
+                                                 Min="30" Max="365" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           OnClick="@TreinarModelo"
+                                           Class="mt-4">
+                                    Treinar Modelo Novamente
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudTabPanel>
+            </MudTabs>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<Me2CampanhaModelo> campanhas = new();
+    private List<InfluencerModel> influencers = new();
+    private Me2CampanhaModelo selectedCampanha;
+    private InfluencerModel selectedInfluencer;
+    private TipoRedeSocial? selectedRedeSocial;
+    private string selectedAlgoritmo = "fastforest";
+    private int janelaTreinamento = 90;
+    private int diasPrevisao = 30;
+
+    // Métricas de previsão
+    private double previsaoVisualizacoes;
+    private double previsaoEngajamento;
+    private double previsaoConversoes;
+    private double roiPrevisto;
+
+    // Níveis de confiança
+    private double confiancaVisualizacoes;
+    private double confiancaEngajamento;
+    private double confiancaConversoes;
+    private double confiancaROI;
+
+    // Dados para gráficos
+    private List<ChartSeries> seriesPrevisaoEngajamento = new();
+    private List<ChartSeries> seriesPrevisaoVisualizacoes = new();
+    private string[] labelsPrevisao = new string[] { };
+
+    // Modelo ML
+    private MLContext mlContext;
+    private ITransformer modeloVisualizacoes;
+    private ITransformer modeloEngajamento;
+
+    // Classe para dados de treinamento
+    private class DadosTreinamento
+    {
+        [LoadColumn(0)]
+        public float Visualizacoes { get; set; }
+
+        [LoadColumn(1)]
+        public float Interacoes { get; set; }
+
+        [LoadColumn(2)]
+        public float ContasAlcancadas { get; set; }
+
+        [LoadColumn(3)]
+        public float ContasComEngajamento { get; set; }
+
+        [LoadColumn(4)]
+        public string AtividadeDoPerfil { get; set; }
+    }
+
+    // Classe para previsão
+    private class PrevisaoML
+    {
+        [ColumnName("Score")]
+        public float Previsao { get; set; }
+    }
+
+    private class PrevisaoDetalhada
+    {
+        public string Periodo { get; set; }
+        public string Metrica { get; set; }
+        public string ValorPrevisto { get; set; }
+        public string IntervaloConfianca { get; set; }
+        public double Tendencia { get; set; }
+    }
+
+    private List<PrevisaoDetalhada> previsoesDetalhadas = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await VerificarLogin();
+            mlContext = new MLContext(seed: 1);
+            await CarregarDados();
+            await InicializarModelos();
+            await GerarPrevisoes();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        
+    }
+
+
+    private async Task InicializarModelos()
+    {
+        try
+        {
+            // Configurar pipeline de ML para visualizações
+            var pipelineVisualizacoes = mlContext.Transforms
+                .CopyColumns(outputColumnName: "Label", inputColumnName: nameof(DadosTreinamento.Visualizacoes))
+                .Append(mlContext.Transforms.Categorical.OneHotEncoding(
+                    outputColumnName: "AtividadeDoPerfilEncoded",
+                    inputColumnName: nameof(DadosTreinamento.AtividadeDoPerfil)))
+                .Append(mlContext.Transforms.Concatenate("Features",
+                    "AtividadeDoPerfilEncoded",
+                    nameof(DadosTreinamento.ContasAlcancadas),
+                    nameof(DadosTreinamento.ContasComEngajamento)))
+                .Append(mlContext.Regression.Trainers.Sdca());
+
+            // Configurar pipeline de ML para engajamento
+            var pipelineEngajamento = mlContext.Transforms
+                .CopyColumns(outputColumnName: "Label", inputColumnName: nameof(DadosTreinamento.Interacoes))
+                .Append(mlContext.Transforms.Categorical.OneHotEncoding(
+                    outputColumnName: "AtividadeDoPerfilEncoded",
+                    inputColumnName: nameof(DadosTreinamento.AtividadeDoPerfil)))
+                .Append(mlContext.Transforms.Concatenate("Features",
+                    "AtividadeDoPerfilEncoded",
+                    nameof(DadosTreinamento.Visualizacoes),
+                    nameof(DadosTreinamento.ContasAlcancadas)))
+                .Append(mlContext.Regression.Trainers.Sdca());
+
+            // Carregar e transformar dados de treinamento
+            var dadosTreinamento = await CarregarDadosTreinamento();
+            var dadosTransformados = dadosTreinamento.Select(i => new DadosTreinamento
+                {
+                    Visualizacoes = (float)i.Visualizacoes,
+                    Interacoes = (float)i.Interacoes,
+                    ContasAlcancadas = (float)i.ContasAlcancadas,
+                    ContasComEngajamento = (float)i.ContasComEngajamento,
+                    AtividadeDoPerfil = i.AtividadeDoPerfil.ToString()
+                }).ToList();
+
+            var dataView = mlContext.Data.LoadFromEnumerable(dadosTransformados);
+
+            modeloVisualizacoes = pipelineVisualizacoes.Fit(dataView);
+            modeloEngajamento = pipelineEngajamento.Fit(dataView);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao inicializar modelos: {ex.Message}", Severity.Error);
+            throw;
+        }
+    }
+
+
+    /// <summary>
+    /// Recupera dados do usuário logado (exemplo de SessionStorage).
+    /// </summary>
+    public async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+                if (dadosSessaoUsuario == null)
+                    NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
+        }
+    }
+    public string storedEmail { get; set; }
+    public AuthUserModel dadosSessaoUsuario { get; set; }
+    private async Task CarregarDados()
+    {
+        // Carregar dados históricos
+        var campanhaService = new Me2CampanhaService();
+        campanhas = await campanhaService.GetCampanhasByEmpresaId(dadosSessaoUsuario.Id);
+
+        if (selectedCampanha != null)
+        {
+            var influencerService = new InfluencerFormService();
+            influencers = await influencerService.GetInfluencersByCampaignIdAsync(selectedCampanha.Id);
+        }
+    }
+
+    private async Task<List<Insight>> CarregarDadosTreinamento()
+    {
+        var insightService = new InsightService();
+        var insights = new List<Insight>();
+
+        foreach (var campanha in campanhas)
+        {
+            var insightsCampanha = await insightService.GetInsightsByCampaignId(campanha.Id);
+            insights.AddRange(insightsCampanha);
+        }
+
+        return insights.Where(i => i.DataInclusao >= DateTime.Now.AddDays(-janelaTreinamento)).ToList();
+    }
+
+    private async Task GerarPrevisoes()
+    {
+        // Gerar previsões para o período especificado
+        var datasPrevisor = Enumerable.Range(0, diasPrevisao)
+            .Select(i => DateTime.Now.AddDays(i))
+            .ToList();
+
+        var previsoesVisualizacoes = new List<double>();
+        var previsoesEngajamento = new List<double>();
+
+        foreach (var data in datasPrevisor)
+        {
+            // Simular previsões (em produção, usar os modelos treinados)
+            previsoesVisualizacoes.Add(Random.Shared.NextDouble() * 10000);
+            previsoesEngajamento.Add(Random.Shared.NextDouble() * 0.15);
+        }
+
+        // Atualizar métricas principais
+        previsaoVisualizacoes = previsoesVisualizacoes.Average();
+        previsaoEngajamento = previsoesEngajamento.Average();
+        previsaoConversoes = previsaoVisualizacoes * 0.02; // Exemplo de cálculo
+        roiPrevisto = (previsaoConversoes * 100) / (double)(selectedCampanha?.TotalInvestimento ?? 1);
+
+        // Atualizar níveis de confiança
+        confiancaVisualizacoes = 0.85 + Random.Shared.NextDouble() * 0.10;
+        confiancaEngajamento = 0.82 + Random.Shared.NextDouble() * 0.10;
+        confiancaConversoes = 0.75 + Random.Shared.NextDouble() * 0.15;
+        confiancaROI = 0.70 + Random.Shared.NextDouble() * 0.20;
+
+        // Atualizar gráficos
+        seriesPrevisaoEngajamento = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Engajamento Previsto",
+                Data = previsoesEngajamento.Select(v => v * 100).ToArray()
+            }
+        };
+
+        seriesPrevisaoVisualizacoes = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Visualizações Previstas",
+                Data = previsoesVisualizacoes.ToArray()
+            }
+        };
+
+        labelsPrevisao = datasPrevisor.Select(d => d.ToString("dd/MM")).ToArray();
+
+        // Atualizar previsões detalhadas
+        previsoesDetalhadas = new List<PrevisaoDetalhada>
+        {
+            new PrevisaoDetalhada
+            {
+                Periodo = "Próximos 7 dias",
+                Metrica = "Visualizações",
+                ValorPrevisto = previsoesVisualizacoes.Take(7).Average().ToString("N0"),
+                IntervaloConfianca = $"±{(1 - confiancaVisualizacoes):P1}",
+                Tendencia = 0.05
+            },
+            new PrevisaoDetalhada
+            {
+                Periodo = "Próximos 7 dias",
+                Metrica = "Engajamento",
+                ValorPrevisto = previsoesEngajamento.Take(7).Average().ToString("P2"),
+                IntervaloConfianca = $"±{(1 - confiancaEngajamento):P1}",
+                Tendencia = 0.03
+            },
+            new PrevisaoDetalhada
+            {
+                Periodo = "Próximo mês",
+                Metrica = "Conversões",
+                ValorPrevisto = previsaoConversoes.ToString("N0"),
+                IntervaloConfianca = $"±{(1 - confiancaConversoes):P1}",
+                Tendencia = 0.08
+            }
+        };
+    }
+
+    private async Task OnCampanhaSelected(Me2CampanhaModelo campanha)
+    {
+        selectedCampanha = campanha;
+        selectedInfluencer = null;
+        await CarregarDados();
+        await GerarPrevisoes();
+    }
+
+    private async Task OnInfluencerSelected(InfluencerModel influencer)
+    {
+        selectedInfluencer = influencer;
+        await GerarPrevisoes();
+    }
+
+    private async Task OnRedeSocialSelected(TipoRedeSocial? redeSocial)
+    {
+        selectedRedeSocial = redeSocial;
+        await GerarPrevisoes();
+    }
+
+    private async Task TreinarModelo()
+    {
+        await InicializarModelos();
+        await GerarPrevisoes();
+        Snackbar.Add("Modelo treinado com sucesso!", Severity.Success);
+    }
+}

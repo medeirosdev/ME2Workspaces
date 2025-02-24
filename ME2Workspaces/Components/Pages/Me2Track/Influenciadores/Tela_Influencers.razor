@@ -66,12 +66,16 @@
                                OnClick="@GoToCampanhas">
                         Voltar para Campanhas
                     </MudButton>
-                    <MudButton StartIcon="@Icons.Material.Filled.ArrowForward"
-                               Variant="Variant.Outlined"
-                               Color="Color.Success"
-                               OnClick="@ProsseguirCampanha">
-                        PROSSEGUIR COM A CRIAÇÃO
-                    </MudButton>
+                    @if(novoItem == true)
+                    {
+                        <MudButton StartIcon="@Icons.Material.Filled.ArrowForward"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Success"
+                                   OnClick="@ProsseguirCampanha">
+                            PROSSEGUIR COM A CRIAÇÃO
+                        </MudButton>
+                    }
+                    
                 </MudStack>
             </MudItem>
         </MudGrid>
@@ -167,7 +171,7 @@
     [Parameter] public bool habilitaFiltroPorCampanha { get; set; }
     [Parameter] public long idCampanha { get; set; }
     [Parameter] public AuthUserModel dadosSessaoUsuario { get; set; }
-
+    [Parameter] public bool novoItem { get; set; }
     private List<InfluencerModel> influencers;
     private List<InfluencerModel> filteredInfluencers;
     private InfluencerModel selectedInfluencer;

@@ -244,6 +244,7 @@
         try
         {
             var originalStatus = !tarefa.Feito; // Guarda o status original antes da mudança
+
             var success = await taskService.UpdateTask(tarefa);
             
             if (success)

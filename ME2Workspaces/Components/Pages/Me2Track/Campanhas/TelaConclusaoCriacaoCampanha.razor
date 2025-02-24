@@ -1,69 +1,118 @@
-﻿@page "/campanha/conclusao"
-@using MudBlazor
+﻿@using MudBlazor
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-6">
-    <MudPaper Elevation="3" Class="pa-8">
+    <MudPaper Elevation="3" Class="pa-8 rounded-xl" Style="background: linear-gradient(to bottom right, var(--mud-palette-white), var(--mud-palette-surface))">
         <MudGrid Justify="Justify.Center" Class="mb-8">
             <MudItem>
-                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                <MudElement HtmlTag="div" Class="success-animation">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" 
+                            Color="Color.Success" 
+                            Size="Size.Large" 
+                            Style="font-size: 4rem;" />
+                </MudElement>
             </MudItem>
         </MudGrid>
 
-        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">Campanha criada com sucesso!</MudText>
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4 fw-bold">
+            Campanha criada com sucesso!
+        </MudText>
         
-        <MudDivider Class="my-6"/>
+        <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary" Class="mb-6">
+            Sua campanha foi configurada e está pronta para começar
+        </MudText>
         
-        <MudGrid>
-            <MudItem xs="12">
-                <MudCard Elevation="0" Class="rounded-lg">
-                    <MudCardContent>
-                        <MudGrid>
-                            <MudItem xs="12" md="6">
-                                <MudText Typo="Typo.subtitle1" Color="Color.Primary">Nome da Campanha</MudText>
-                                <MudText Typo="Typo.h6" Class="mt-1">@NomeCampanha</MudText>
-                            </MudItem>
-                            
-                            <MudItem xs="12" md="6">
-                                <MudText Typo="Typo.subtitle1" Color="Color.Primary">Influenciadores</MudText>
-                                <MudText Typo="Typo.h6" Class="mt-1">@NumeroInfluenciadores influenciador(es)</MudText>
-                            </MudItem>
-                            
-                            <MudItem xs="12" Class="mt-4">
-                                <MudText Typo="Typo.subtitle1" Color="Color.Primary">Status</MudText>
-                                <MudChip T="string" Color="Color.Success" Size="Size.Medium" Class="mt-1">
-                                    Pronta para iniciar
-                                </MudChip>
-                            </MudItem>
-                        </MudGrid>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-        </MudGrid>
+        <MudCard Elevation="0" 
+                 Class="rounded-lg border-2 border-solid mb-6" 
+                 Style="border-color: var(--mud-palette-primary-lighten)">
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" md="6" Class="pb-4">
+                        <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                            Nome da Campanha
+                        </MudText>
+                        <MudText Typo="Typo.h6" Class="mt-1 d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Campaign" 
+                                    Class="mr-2" 
+                                    Size="Size.Small" />
+                            @NomeCampanha
+                        </MudText>
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="6" Class="pb-4">
+                        <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                            Influenciadores
+                        </MudText>
+                        <MudText Typo="Typo.h6" Class="mt-1 d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Group" 
+                                    Class="mr-2" 
+                                    Size="Size.Small" />
+                            @NumeroInfluenciadores influenciador@(NumeroInfluenciadores != 1 ? "es" : "")
+                        </MudText>
+                    </MudItem>
+                    
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                            Status
+                        </MudText>
+                        <MudChip T="string" Icon="@Icons.Material.Filled.PlayCircle"
+                                Color="Color.Success" 
+                                Size="Size.Large" 
+                                Class="mt-1 px-4">
+                            Pronta para iniciar
+                        </MudChip>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
 
-        <MudDivider Class="my-6"/>
-
-        <MudGrid Justify="Justify.Center" Class="mt-8">
-            <MudItem xs="12" md="6" Class="d-flex justify-center">
+        <MudGrid Spacing="3" Class="mt-8">
+            <MudItem xs="12" md="6">
                 <MudButton Variant="Variant.Filled" 
                           Color="Color.Primary" 
                           Size="Size.Large" 
                           FullWidth="true"
-                          OnClick="@(() => NavigateToGerenciamento())">
+                          StartIcon="@Icons.Material.Filled.Dashboard"
+                          OnClick="@NavigateToGerenciamento"
+                          Class="py-3">
                     Ir para Gerenciamento
                 </MudButton>
             </MudItem>
-            <MudItem xs="12" md="6" Class="d-flex justify-center">
+            <MudItem xs="12" md="6">
                 <MudButton Variant="Variant.Outlined" 
                           Color="Color.Primary" 
                           Size="Size.Large" 
                           FullWidth="true"
-                          OnClick="@(() => CriarNovaCampanha())">
+                          StartIcon="@Icons.Material.Filled.Add"
+                          OnClick="@CriarNovaCampanha"
+                          Class="py-3">
                     Criar Nova Campanha
                 </MudButton>
             </MudItem>
         </MudGrid>
     </MudPaper>
 </MudContainer>
+
+<style>
+    .success-animation {
+        animation: scaleIn 0.5s ease-out;
+    }
+
+    @@keyframes scaleIn {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        70% {
+            transform: scale(1.2);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+</style>
 
 @code {
     [Parameter]
@@ -74,9 +123,18 @@
 
     private void NavigateToGerenciamento()
     {
+        Snackbar.Add("Redirecionando para o painel de gerenciamento...", Severity.Info);
+        // NavigationManager.NavigateTo("/gerenciamento");
     }
 
     private void CriarNovaCampanha()
     {
+        Snackbar.Add("Iniciando nova campanha...", Severity.Info);
+        // NavigationManager.NavigateTo("/nova-campanha");
+    }
+
+    protected override void OnInitialized()
+    {
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
     }
 }

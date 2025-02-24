@@ -136,7 +136,8 @@
         {
             { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
             { x => x.idCampanha, id_campanha },
-            { x => x.habilitaFiltroPorCampanha, true}
+            { x => x.habilitaFiltroPorCampanha, true},
+            {x => x.novoItem, false}
         };
 
         var dialog = await MudDialogService.ShowAsync<Tela_Influencers>("Influencers da Campanha", parameters);
@@ -152,7 +153,8 @@
         {
             { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
             { x => x.idCampanha, idCampanhaNova },
-            { x => x.habilitaFiltroPorCampanha, true}
+            { x => x.habilitaFiltroPorCampanha, true},
+            {x => x.novoItem, true}
         };
 
         var dialog = await MudDialogService.ShowAsync<Tela_Influencers>("Influencers da Campanha", parameters);

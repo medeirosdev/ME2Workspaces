@@ -1,4 +1,5 @@
 ﻿@page "/entregaInfluenciadores"
+@using ME2Workspaces.Components.Pages.Me2Track.Campanhas
 @using ME2Workspaces.Components.Pages.Me2Track.Campanhas.Me2TrackCampanha
 @using ME2Workspaces.Components.Pages.Me2Track.Influenciadores.Tarefas
 @using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores
@@ -412,9 +413,21 @@
         StateHasChanged();
     }
 
-    private void ConcluirCampanha()
+    private async Task ConcluirCampanha()
     {
+        Me2CampanhaService servico = new();
+        var campanha_criada = await servico.GetCampanhaById(idCampanha);
 
+        var parameters = new DialogParameters<TelaConclusaoCriacaoCampanha>
+        {
+            { x => x.NomeCampanha, campanha_criada.NomeCampanha },
+            { x => x.NumeroInfluenciadores, influencers.Count }
+        };
+
+        await DialogService.ShowAsync<TelaConclusaoCriacaoCampanha>(
+            "Parabéns!",
+            parameters
+        );
     }
 }
 <style>
