@@ -323,13 +323,31 @@
 
     protected override async Task OnInitializedAsync()
     {
-        
+
     }
 
     private async Task CarregarDados()
     {
         await VerificarLogin();
+        storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+        if(storedEmail == null)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
 
+        if (storedEmail == "")
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+
+        if (dadosSessaoUsuario == null)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
         var campanhaService = new Me2CampanhaService();
         var influencerService = new InfluencerFormService();
         var insightService = new InsightService();
