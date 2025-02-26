@@ -68,18 +68,19 @@
         </MudCard>
 
         <MudGrid Spacing="3" Class="mt-8">
-            <MudItem xs="12" md="6">
-                <MudButton Variant="Variant.Filled" 
-                          Color="Color.Primary" 
-                          Size="Size.Large" 
-                          FullWidth="true"
-                          StartIcon="@Icons.Material.Filled.Dashboard"
-                          OnClick="@NavigateToGerenciamento"
-                          Class="py-3">
-                    Ir para Gerenciamento
-                </MudButton>
-            </MudItem>
-            <MudItem xs="12" md="6">
+            @* <MudItem xs="12" md="6">
+                
+            </MudItem> *@
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       FullWidth="true"
+                       StartIcon="@Icons.Material.Filled.Dashboard"
+                       OnClick="@NavigateToGerenciamento"
+                       Class="py-3">
+                VOLTAR PARA O GERENCIADOR DE CAMPANHAS
+            </MudButton>
+            @* <MudItem xs="12" md="6">
                 <MudButton Variant="Variant.Outlined" 
                           Color="Color.Primary" 
                           Size="Size.Large" 
@@ -89,7 +90,7 @@
                           Class="py-3">
                     Criar Nova Campanha
                 </MudButton>
-            </MudItem>
+            </MudItem> *@
         </MudGrid>
     </MudPaper>
 </MudContainer>
@@ -124,7 +125,7 @@
     private void NavigateToGerenciamento()
     {
         Snackbar.Add("Redirecionando para o painel de gerenciamento...", Severity.Info);
-        // NavigationManager.NavigateTo("/gerenciamento");
+        NavigationManager.NavigateTo("/campanhas");
     }
 
     private void CriarNovaCampanha()

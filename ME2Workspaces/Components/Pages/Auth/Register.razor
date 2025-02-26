@@ -1,4 +1,6 @@
 ﻿@page "/register"
+@layout LayoutVazio
+@using ME2Workspaces.Components.Layout
 @rendermode InteractiveServer
 @using Me2Workspaces.ModulosME2.DBUser;
 @using static Me2Workspaces.ModulosME2.DBUser.UserService
@@ -7,11 +9,8 @@
 
 <div class="login-container">
     <div class="left-section">
-        <div class="logo-container">
-            <img src="images/me2-logo.png" alt="Me2 Logo" class="logo" />
-        </div>
         <div class="illustration-container">
-            <img src="images/illustration.png" alt="Illustration" class="illustration" />
+            <img src="/wallpapers/loginwall.png" alt="Illustration" class="illustration" />
         </div>
     </div>
     <div class="right-section">
@@ -37,6 +36,10 @@
             <div class="form-floating mb-3">
                 <textarea @bind="informacoesEmpresa" class="form-control" placeholder="Detalhes da empresa"></textarea>
                 <label for="informacoesEmpresa" class="form-label">Informações Extras</label>
+            </div>
+            <div class="form-floating mb-3">
+                <textarea @bind="CHAVEME2" class="form-control" placeholder="Chave de acesso ME2"></textarea>
+                <label for="informacoesEmpresa" class="form-label">Chave de acesso ME2</label>
             </div>
             <div>
                 <button @onclick="HandleRegister" class="w-100 btn btn-primary">Registrar</button>
@@ -67,7 +70,7 @@
 
     .left-section {
         flex: 1;
-        background-color: #002366;
+        background-color: #0d368f;
         color: white;
         display: flex;
         flex-direction: column;
@@ -78,12 +81,11 @@
 
     .logo {
         width: 150px;
-        margin-bottom: 20px;
     }
 
     .illustration {
         max-width: 100%;
-        height: auto;
+        height: 100vh;
     }
 
     .right-section {
@@ -98,7 +100,7 @@
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: #002366;
+            color: #0d368f;
         }
 
         .right-section p {
@@ -107,28 +109,21 @@
         }
 
     .btn-primary {
-        background-color: #002366;
+        background-color: #0d368f;
         border: none;
     }
 
         .btn-primary:hover {
-            background-color: #001a4d;
+            background-color: #0d368f;
         }
 
     .text-danger {
         color: red;
     }
-
-    .text-success {
-        color: green;
-    }
-
-    .form-check-label {
-        margin-left: 5px;
-    }
 </style>
 
 @code {
+    private string CHAVEME2 { get; set; } = "";
     private string username = string.Empty;
     private string email = string.Empty;
     private string senha = string.Empty;
@@ -143,6 +138,16 @@
 
     private async Task HandleRegister()
     {
+        if (CHAVEME2 != "9386c4360ca127132e09534158cfc782f21a64c5b8e329e7ca3b6e4f7c7dd084dca6042100bc243656430d1b6cd1f7be253509db201442af48abc7dcc446e230")
+        {
+            ErrorMessage = "Chave de acesso ME2 incorreta!";
+            SuccessMessage = string.Empty;
+            return;
+        }
+
+
+
+
         // Validação básica
         if (string.IsNullOrWhiteSpace(username) ||
             string.IsNullOrWhiteSpace(email) ||

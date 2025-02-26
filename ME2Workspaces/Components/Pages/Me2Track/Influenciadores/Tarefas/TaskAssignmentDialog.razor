@@ -8,7 +8,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 
-<MudDialog Style="width: 1000px; max-height: 90vh; padding: 0;">
+<MudDialog Style="width: 1000px; max-height: 90vh; padding: 0;border-radius:20px;">
     <DialogContent>
         <MudContainer Style="padding: 24px;" MaxWidth="MaxWidth.False">
             <!-- Header Section -->
@@ -260,6 +260,11 @@
             await LoadDataAsync();
             Snackbar.Add("Tarefa criada com sucesso!", Severity.Success);
         }
+
+        if (!dialog.Result.IsCanceled)
+        {
+            await LoadDataAsync();
+        }
     }
 
     private async Task EditarTarefa()
@@ -286,6 +291,11 @@
         {
             await LoadDataAsync();
             Snackbar.Add("Tarefa atualizada com sucesso!", Severity.Success);
+        }
+
+        if (!dialog.Result.IsCanceled)
+        {
+            await LoadDataAsync();
         }
     }
 

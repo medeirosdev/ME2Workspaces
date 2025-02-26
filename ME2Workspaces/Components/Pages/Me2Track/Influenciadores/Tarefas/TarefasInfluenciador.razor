@@ -93,10 +93,10 @@
 
                 <RowTemplate Context="tarefa">
                     <MudTd DataLabel="Status">
-                        <MudCheckBox T="bool"
-                            @bind-Checked="tarefa.Feito"
+                        <MudCheckBox T="bool" 
+                            @bind-Checked="tarefa.Feito" 
                             Color="@(IsTaskOverdue(tarefa) ? Color.Error : Color.Primary)"
-                            OnCheckedChanged="@(async () => await OnTaskStatusChanged(tarefa))"
+                            ValueChanged="@(async () => await OnTaskStatusChanged(tarefa))"
                             Size="Size.Large" />
                     </MudTd>
                     <MudTd DataLabel="Descrição">
@@ -243,7 +243,7 @@
     {
         try
         {
-            var originalStatus = !tarefa.Feito; // Guarda o status original antes da mudança
+            tarefa.Feito = !tarefa.Feito; // Guarda o status original antes da mudança
 
             var success = await taskService.UpdateTask(tarefa);
             
@@ -264,7 +264,6 @@
             else
             {
                 // Reverte o status se a atualização falhar
-                tarefa.Feito = originalStatus;
                 Snackbar.Add("Não foi possível atualizar o status da tarefa.", Severity.Error);
             }
         }

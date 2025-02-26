@@ -323,11 +323,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await CarregarDados();
-        await AtualizarMetricas();
-        await AtualizarGraficos();
-        await CarregarMetricasCrescimento();
-        await CarregarDadosAvancados();
+        
     }
 
     private async Task CarregarDados()
@@ -355,6 +351,12 @@
         if (firstRender)
         {
             await VerificarLogin();
+            await CarregarDados();
+            await AtualizarMetricas();
+            await AtualizarGraficos();
+            await CarregarMetricasCrescimento();
+
+            await CarregarDadosAvancados();
         }
     }
 

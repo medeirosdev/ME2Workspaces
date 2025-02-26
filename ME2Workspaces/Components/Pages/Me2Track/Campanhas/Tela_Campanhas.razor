@@ -28,7 +28,8 @@
                 <div class="dashboard-content">
                     <MudText Typo="Typo.h3" Color="Color.Secondary">@totalInsights</MudText>
                     <MudText>Insights Recebidos</MudText>
-                    <MudText Typo="Typo.caption">Média por campanha: @mediaInsightsPorCampanha</MudText>
+                    <MudText Typo="Typo.caption">na campanha selecionada</MudText>
+                    @* <MudText Typo="Typo.caption">Média por campanha: @mediaInsightsPorCampanha</MudText> *@
                 </div>
             </MudPaper>
         </MudItem>
@@ -40,7 +41,8 @@
                 <div class="dashboard-content">
                     <MudText Typo="Typo.h3" Color="Color.Info">@totalInfluencers</MudText>
                     <MudText>Influencers Ativos</MudText>
-                    <MudText Typo="Typo.caption">Média por campanha: @mediaInfluencersPorCampanha</MudText>
+                    <MudText Typo="Typo.caption">na campanha selecionada</MudText>
+                    @* <MudText Typo="Typo.caption">Média por campanha: @mediaInfluencersPorCampanha</MudText> *@
                 </div>
             </MudPaper>
         </MudItem>
@@ -172,7 +174,7 @@
     private decimal engagementRate;
     private decimal mediaInsightsPorCampanha;
     private decimal mediaInfluencersPorCampanha;
-    
+
 
     // Chart Data
     private List<ChartSeries> insightsSeries = new();
@@ -184,8 +186,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadDashboardData();
-        await InitializeChartData();
+        
     }
 
     public string storedEmail { get; set; }
@@ -197,6 +198,8 @@
         {
             await VerificarLogin();
             await CarregarCampanhas();
+            await LoadDashboardData();
+            await InitializeChartData();
         }
     }
 
@@ -248,7 +251,7 @@
         StateHasChanged();
     }
 
-    
+
 
     private async Task CarregarTopInfluencers()
     {
@@ -267,7 +270,12 @@
         if (dadosSessaoUsuario == null) return;
 
         var influencerService = new InfluencerFormService();
-        totalInfluencers = await influencerService.ObterNumeroInfluencers(dadosSessaoUsuario.Id);
+        if (selectedCampanha == null)
+        {
+            return;
+        }
+        totalInfluencers = await influencerService.ObterNumeroInfluencers(selectedCampanha.Id);
+        totalInsights = await influencerService.ObterNumeroInsights(selectedCampanha.Id);
 
         if (campanhas.Count > 0)
         {
@@ -524,9 +532,10 @@
         }
     }
 
-    private void OnSelectedItemChanged(Me2CampanhaModelo campanha)
+    private async Task OnSelectedItemChanged(Me2CampanhaModelo campanha)
     {
         selectedCampanha = campanha;
+        await CalcularEstatisticas();
     }
 }
 

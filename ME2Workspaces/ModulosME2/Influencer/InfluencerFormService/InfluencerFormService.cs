@@ -176,6 +176,26 @@ namespace Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
             }
         }
 
+        public async Task<int> ObterNumeroInsights(long ID_Campanha)
+        {
+            using var connection = await connectionDB.NewConnection();
+            if (connection == null) return 0;
+
+            try
+            {
+                string sql = @"SELECT COUNT(*) 
+                      FROM insight 
+                      WHERE ID_Campanha = @ID_Campanha;";
+
+                return await connection.ExecuteScalarAsync<int>(sql, new { ID_Campanha = ID_Campanha });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao obter número de influencers: {ex.Message}");
+                return 0;
+            }
+        }
+
         /// <summary>
         /// Atualiza os dados de um influenciador com base no Email.
         /// Também atualiza os campos recém-adicionados.
