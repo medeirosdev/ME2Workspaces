@@ -90,11 +90,7 @@
     {
         try
         {
-            var storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
-            if (!string.IsNullOrEmpty(storedEmail))
-            {
-                user = await UserService.GetUserByEmail(storedEmail) ?? new AuthUserModel();
-            }
+            
         }
         catch (Exception ex)
         {
@@ -104,6 +100,39 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    public string storedEmail { get; set; }
+
+    public AuthUserModel dadosSessaoUsuario { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await VerificarLogin();
+
+        }
+    }
+
+    public async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                var userService = new UserService();
+                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+                user = await UserService.GetUserByEmail(storedEmail) ?? new AuthUserModel();
+                if (dadosSessaoUsuario == null)
+                    NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
         }
     }
 
