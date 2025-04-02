@@ -63,7 +63,7 @@
                                 <MudDateRangePicker Label="Período"
                                                     @bind-DateRange="dateRange"
                                                     DateFormat="dd/MM/yyyy"
-                                                    AdornmentColor="Color.Primary" />
+                                                      />
                             </MudItem>
                         </MudGrid>
                     </MudPaper>
@@ -71,7 +71,7 @@
                     <!-- KPI Cards -->
                     <MudGrid Class="mb-4">
                         <MudItem xs="12" sm="3">
-                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #0033a0, #0d368f);">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #2F67FF, #0d368f);">
                                 <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Total de Visualizações</MudText>
                                 <MudText Typo="Typo.h4" Style="color: #fddd0d;">@totalVisualizacoes.ToString("N0")</MudText>
                                 <MudText Typo="Typo.caption" Style="color: white;">
@@ -80,7 +80,7 @@
                             </MudPaper>
                         </MudItem>
                         <MudItem xs="12" sm="3">
-                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #0033a0, #0d368f);">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #2F67FF, #0d368f);">
                                 <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Média de Engajamento</MudText>
                                 <MudText Typo="Typo.h4" Style="color: #fddd0d;">@mediaEngajamento.ToString("P2")</MudText>
                                 <MudText Typo="Typo.caption" Style="color: white;">
@@ -89,7 +89,7 @@
                             </MudPaper>
                         </MudItem>
                         <MudItem xs="12" sm="3">
-                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #0033a0, #0d368f);">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #2F67FF, #0d368f);">
                                 <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Total de Interações</MudText>
                                 <MudText Typo="Typo.h4" Style="color: #fddd0d;">@totalInteracoes.ToString("N0")</MudText>
                                 <MudText Typo="Typo.caption" Style="color: white;">
@@ -98,7 +98,7 @@
                             </MudPaper>
                         </MudItem>
                         <MudItem xs="12" sm="3">
-                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #0033a0, #0d368f);">
+                            <MudPaper Class="pa-4" Style="height: 120px; background: linear-gradient(45deg, #2F67FF, #0d368f);">
                                 <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: white;">Cliques em Links</MudText>
                                 <MudText Typo="Typo.h4" Style="color: #fddd0d;">@totalCliquesLinks.ToString("N0")</MudText>
                                 <MudText Typo="Typo.caption" Style="color: white;">
@@ -213,7 +213,7 @@
                                 <MudGrid>
                                     <MudItem xs="12" sm="4">
                                         <MudButton Variant="Variant.Filled"
-                                                   Color="Color.Primary"
+                                                    Style="@($"background-color:#2F67FF;color:#FFFF")" 
                                                    StartIcon="@Icons.Material.Filled.Download"
                                                    OnClick="@ExportarRelatorioCompleto"
                                                    FullWidth="true">
@@ -261,7 +261,7 @@
                             </MudItem>
                             <MudItem xs="12">
                                 <MudButton Variant="Variant.Filled"
-                                           Color="Color.Primary"
+                                            Style="@($"background-color:#2F67FF;color:#FFFF")" 
                                            OnClick="@AgendarRelatorio"
                                            FullWidth="false">
                                     Agendar Relatório

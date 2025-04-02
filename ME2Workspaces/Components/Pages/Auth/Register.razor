@@ -185,6 +185,12 @@
         {
             SuccessMessage = "Usuário registrado com sucesso!";
             ErrorMessage = string.Empty;
+
+            // Armazena o email no SessionStorage
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "userEmail", email);
+
+            // Redireciona para a página inicial após cadastro bem-sucedido
+            NavigationManager.NavigateTo("/");
         }
         else
         {

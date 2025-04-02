@@ -15,7 +15,7 @@
         <MudPaper Elevation="0" Class="pa-4">
             <MudText Typo="Typo.h5" Class="mb-4">
                 Insights de @influencerNome
-                <MudText Typo="Typo.subtitle1" Color="Color.Primary">
+                <MudText Typo="Typo.subtitle1"  >
                     Campanha: @campanhaNome
                 </MudText>
             </MudText>
@@ -25,14 +25,14 @@
                     <MudStack Row="true" Spacing="2" Class="flex-wrap">
                         <MudButton StartIcon="@Icons.Material.Filled.Add"
                                    Variant="Variant.Filled"
-                                   Color="Color.Primary"
+                                    Style="@($"background-color:#2F67FF;color:#FFFF")" 
                                    OnClick="AdicionarInsightAsync">
                             Adicionar Insight
                         </MudButton>
 
                         <MudButton StartIcon="@Icons.Material.Filled.Edit"
                                    Variant="Variant.Filled"
-                                   Color="Color.Primary"
+                                    Style="@($"background-color:#2F67FF;color:#FFFF")" 
                                    OnClick="AlterarInsightAsync"
                                    Disabled="@(!CanAlterInsight)">
                             Alterar Insight

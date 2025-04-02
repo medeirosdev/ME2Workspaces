@@ -81,7 +81,7 @@
                             <MudItem xs="12" sm="6" Class="d-flex align-center">
                                 <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles">
                                     <ActivatorContent>
-                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image">
+                                        <MudButton Variant="Variant.Filled"  Style="@($"background-color:#2F67FF;color:#FFFF")"  StartIcon="@Icons.Material.Filled.Image">
                                             Upload Imagem
                                         </MudButton>
                                     </ActivatorContent>
@@ -106,7 +106,7 @@
                         </MudList>
 
                         <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
+                                    Style="@($"background-color:#2F67FF;color:#FFFF")" 
                                    OnClick="ProcessImage"
                                    Disabled="!(files?.Count > 0)">
                             Ler Imagem
@@ -235,7 +235,7 @@
             Cancelar
         </MudButton>
         <MudButton OnClick="Salvar"
-                   Color="Color.Primary"
+                    Style="@($"background-color:#2F67FF;color:#FFFF")" 
                    Variant="Variant.Filled"
                    StartIcon="@Icons.Material.Filled.Save"
                    Disabled="@(_isSaving)">

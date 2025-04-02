@@ -11,7 +11,7 @@
         </div>
     </div>
     <div class="right-section">
-        <h2>Bem-vindo à Plataforma ME2</h2>
+        <h2>Bem-vindo à ME2®</h2>
         <p>Faça o seu login e tenha acesso a uma plataforma completa de gestão de campanhas.</p>
         <div>
             <div class="form-floating mb-3">
@@ -24,6 +24,8 @@
             </div>
             <div>
                 <button @onclick="HandleLogin" class="w-100 btn btn-primary">Entrar</button>
+                <button style="margin-top:5px;" class="w-100 btn btn-primary">Ou Crie sua conta aqui</button>
+                <p>Esqueceu sua senha? <a>Clique aqui!</a></p>
             </div>
             @if (!string.IsNullOrEmpty(ErrorMessage))
             {

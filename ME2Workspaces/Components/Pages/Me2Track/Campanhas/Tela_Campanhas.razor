@@ -12,9 +12,9 @@
         <!-- Campaign Stats -->
         <MudItem xs="12" sm="6" md="3">
             <MudPaper Elevation="2" Class="dashboard-card">
-                <MudIcon Icon="@Icons.Material.Filled.Campaign" Color="Color.Primary" Class="dashboard-icon" />
+                <MudIcon Icon="@Icons.Material.Filled.Campaign"  Style="@($"background-color:#2F67FF;color:#FFFF")"  Class="dashboard-icon" />
                 <div class="dashboard-content">
-                    <MudText Typo="Typo.h3" Color="Color.Primary">@campanhas.Count</MudText>
+                    <MudText Typo="Typo.h3" Style="@($"color:#FAFAFA;")">@campanhas.Count</MudText>
                     <MudText>Campanhas Ativas</MudText>
                     <MudText Typo="Typo.caption">Média mensal: @(campanhas.Count > 0 ? "6" : "0") campanhas</MudText>
                 </div>
@@ -26,7 +26,7 @@
             <MudPaper Elevation="2" Class="dashboard-card">
                 <MudIcon Icon="@Icons.Material.Filled.Analytics" Color="Color.Secondary" Class="dashboard-icon" />
                 <div class="dashboard-content">
-                    <MudText Typo="Typo.h3" Color="Color.Secondary">@totalInsights</MudText>
+                    <MudText Typo="Typo.h3" Style="@($"color:#FAFAFA;")">@totalInsights</MudText>
                     <MudText>Insights Recebidos</MudText>
                     <MudText Typo="Typo.caption">na campanha selecionada</MudText>
                     @* <MudText Typo="Typo.caption">Média por campanha: @mediaInsightsPorCampanha</MudText> *@
@@ -39,7 +39,7 @@
             <MudPaper Elevation="2" Class="dashboard-card">
                 <MudIcon Icon="@Icons.Material.Filled.Group" Color="Color.Info" Class="dashboard-icon" />
                 <div class="dashboard-content">
-                    <MudText Typo="Typo.h3" Color="Color.Info">@totalInfluencers</MudText>
+                    <MudText Typo="Typo.h3" Style="@($"color:#FAFAFA;")">@totalInfluencers</MudText>
                     <MudText>Influencers Ativos</MudText>
                     <MudText Typo="Typo.caption">na campanha selecionada</MudText>
                     @* <MudText Typo="Typo.caption">Média por campanha: @mediaInfluencersPorCampanha</MudText> *@
@@ -52,7 +52,7 @@
             <MudPaper Elevation="2" Class="dashboard-card">
                 <MudIcon Icon="@Icons.Material.Filled.Favorite" Color="Color.Error" Class="dashboard-icon" />
                 <div class="dashboard-content">
-                    <MudText Typo="Typo.h3" Color="Color.Error">@engagementRate%</MudText>
+                    <MudText Typo="Typo.h3" Style="@($"color:#FAFAFA;")">@engagementRate%</MudText>
                     <MudText>Taxa de Engajamento</MudText>
                     <MudText Typo="Typo.caption">Média geral das campanhas</MudText>
                 </div>
@@ -68,14 +68,14 @@
             </MudItem>
             <MudItem xs="12" sm="6" Class="d-flex justify-end">
                 <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
+                            Style="@($"background-color:#2F67FF;color:#FFFF")" 
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="@CreateCampanha"
                            Class="mr-2">
                     Nova Campanha
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
+                            Style="@($"background-color:#2F67FF;color:#FFFF")" 
                            StartIcon="@Icons.Material.Filled.Edit"
                            OnClick="@EditCampanha"
                            Disabled="@(selectedCampanha == null)">
@@ -110,7 +110,7 @@
                             Excluir
                         </MudButton>
                         <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
+                                   Style="@($"background-color:#2F67FF;color:#")"
                                    StartIcon="@Icons.Material.Filled.Visibility"
                                    Size="Size.Small"
                                    OnClick="@(() => EditCampanhaGRID(ctx.Item))">
@@ -544,7 +544,8 @@
         padding: 16px;
         display: flex;
         align-items: center;
-        height: 100%;
+        color:white;
+        background-color: #2F67FF; height: 100%;
     }
 
     .dashboard-icon {
