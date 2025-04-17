@@ -175,6 +175,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        itemManipulado = new();
+        itemManipulado.DataInicio = DateTime.Now.AddDays(5);
+        itemManipulado.DataTermino = DateTime.Now.AddDays(20);
         if (!novoItem)
         {
             itemManipulado = await servicoCampanha.GetCampanhaById(id_campanha) ?? new Me2CampanhaModelo();

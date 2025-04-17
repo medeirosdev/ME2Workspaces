@@ -11,7 +11,7 @@
         </div>
     </div>
     <div class="right-section">
-        <h2>Bem-vindo à ME2®</h2>
+        <h2>Bem-vindo à Me2®</h2>
         <p>Faça o seu login e tenha acesso a uma plataforma completa de gestão de campanhas.</p>
         <div>
             <div class="form-floating mb-3">
@@ -24,8 +24,8 @@
             </div>
             <div>
                 <button @onclick="HandleLogin" class="w-100 btn btn-primary">Entrar</button>
-                <button style="margin-top:5px;" class="w-100 btn btn-primary">Ou Crie sua conta aqui</button>
-                <p>Esqueceu sua senha? <a>Clique aqui!</a></p>
+                <button style="margin-top:5px;" @onclick="HandleRegister" class="w-100 btn btn-primary">Ou crie sua conta aqui</button>
+                @* <p>Esqueceu sua senha? <a>Clique aqui!</a></p> *@
             </div>
             @if (!string.IsNullOrEmpty(ErrorMessage))
             {
@@ -102,6 +102,11 @@
     private string email = string.Empty;
     private string senha = string.Empty;
     private string ErrorMessage = string.Empty;
+
+    public async Task HandleRegister(){
+        // Redireciona para a página inicial após login bem-sucedido
+            NavigationManager.NavigateTo("/register");
+    }
 
     private async Task HandleLogin()
     {

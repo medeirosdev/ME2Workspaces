@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Components\Pages\Me2Track\Resultados\VerTarefas.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ME2Workspaces.Client\ME2Workspaces.Client.csproj" />
     <PackageReference Include="CsvHelper" Version="33.0.1" />
     <PackageReference Include="Dapper" Version="2.1.35" />
@@ -23,6 +27,18 @@
 
   <ItemGroup>
     <Folder Include="tessdata\tessconfigs\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Components\Pages\Me2Track\Resultados\VerTarefas.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Components\Pages\Me2Track\Resultados\VerTarefas.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Components\Pages\Me2Track\Resultados\VerTarefas.razor" />
   </ItemGroup>
 
 </Project>
