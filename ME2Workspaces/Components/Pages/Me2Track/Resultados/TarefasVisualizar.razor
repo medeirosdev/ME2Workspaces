@@ -1,1 +1,423 @@
-﻿
+﻿@page "/vertarefas"
+@rendermode InteractiveServer
+
+
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using ME2Workspaces.Components.Pages.Me2Track.Influenciadores.Tarefas
+@using MudBlazor
+@using ME2Workspaces.ModulosME2.TarefasInfluencer
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@using Microsoft.JSInterop
+
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject UserService UserService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudGrid>
+
+        <!-- Cabeçalho -->
+        <MudItem xs="12">
+            <MudText Typo="Typo.h4">Dashboard de Tarefas</MudText>
+        </MudItem>
+
+        <!-- Filtragem -->
+        <MudItem xs="12">
+            <MudPaper Class="pa-4 mb-4">
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="Me2CampanhaModelo"
+                                   Label="Campanha"
+                                   Value="selectedCampanha"
+                                   ValueChanged="OnCampanhaSelected">
+                            <MudSelectItem T="Me2CampanhaModelo" Value="null">
+                                Todas as Campanhas
+                            </MudSelectItem>
+                            @foreach (var c in campanhas)
+                            {
+                                <MudSelectItem Value="c">@c.NomeCampanha</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect T="InfluencerModel"
+                                   Label="Influenciador"
+                                   Value="selectedInfluencer"
+                                   ValueChanged="OnInfluencerSelected"
+                                   Disabled="selectedCampanha == null">
+                            <MudSelectItem T="InfluencerModel" Value="null">
+                                Todos os Influenciadores
+                            </MudSelectItem>
+                            @foreach (var inf in influencers)
+                            {
+                                <MudSelectItem Value="inf">@inf.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudDateRangePicker Label="Período"
+                                            Value="dateRange"
+                                            ValueChanged="OnPeriodChanged"
+                                            DateFormat="dd/MM/yyyy" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <!-- KPI Cards -->
+        <MudItem xs="12" Class="mb-4">
+            <MudGrid>
+                <MudItem xs="12" sm="3">
+                    <MudPaper Class="pa-4" Style="height:120px; background:linear-gradient(45deg,#2F67FF,#0d368f);">
+                        <MudText Typo="Typo.subtitle1" Class="mb-1" Style="color:white;">Total</MudText>
+                        <MudText Typo="Typo.h4" Style="color:#fddd0d;">@totalTarefas</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudPaper Class="pa-4" Style="height:120px; background:linear-gradient(45deg,#2F67FF,#0d368f);">
+                        <MudText Typo="Typo.subtitle1" Class="mb-1" Style="color:white;">Concluídas</MudText>
+                        <MudText Typo="Typo.h4" Style="color:#fddd0d;">@tarefasConcluidas</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudPaper Class="pa-4" Style="height:120px; background:linear-gradient(45deg,#2F67FF,#0d368f);">
+                        <MudText Typo="Typo.subtitle1" Class="mb-1" Style="color:white;">Pendentes</MudText>
+                        <MudText Typo="Typo.h4" Style="color:#fddd0d;">@tarefasPendentes</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudPaper Class="pa-4" Style="height:120px; background:linear-gradient(45deg,#2F67FF,#0d368f);">
+                        <MudText Typo="Typo.subtitle1" Class="mb-1" Style="color:white;">Vencendo (7d)</MudText>
+                        <MudText Typo="Typo.h4" Style="color:#fddd0d;">@tarefasVencendoSemana</MudText>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+
+        <!-- Abas -->
+        <MudItem xs="12">
+            <MudTabs>
+
+                <!-- Tabela + mini-gráficos -->
+                <MudTabPanel Text="Tabela">
+                    <MudPaper Elevation="1" Class="pa-4 overflow-hidden">
+                        <MudDataGrid T="InfluencerTask"
+                                     Items="tarefas"
+                                     Dense="true"
+                                     Hover="true"
+                                     Filterable="true"
+                                     SortMode="SortMode.Multiple"
+                                     SelectedItem="tarefaSelecionada"
+                                     SelectedItemChanged="OnSelectedTaskChanged"
+                                     Loading="isLoading"
+                                     Height="400px">
+                            <ToolBarContent>
+                                <MudText Typo="Typo.h6">Tarefas</MudText>
+                                <MudSpacer />
+                                <MudTextField @bind-Value="searchString"
+                                              Placeholder="Pesquisar..."
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Search"
+                                              Immediate="true"
+                                              DebounceInterval="300" />
+                            </ToolBarContent>
+                            <Columns>
+                                <PropertyColumn Property="x => x.Descricao" Title="Descrição">
+                                    <CellTemplate Context="cell">
+                                        <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-2" />
+                                        @cell.Item.Descricao
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                <PropertyColumn Property="x => x.Tipo_Tarefa" Title="Tipo">
+                                    <CellTemplate Context="cell">
+                                        <MudChip Size="Size.Small"
+                                                 Color="@GetTipoTarefaColor(cell.Item.Tipo_Tarefa)">
+                                            @GetTipoTarefaText(cell.Item.Tipo_Tarefa)
+                                        </MudChip>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                <PropertyColumn Property="x => x.Prazo" Title="Prazo">
+                                    <CellTemplate Context="cell">
+                                        <MudText>@cell.Item.Prazo?.ToString("dd/MM/yyyy")</MudText>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                <PropertyColumn Property="x => x.DataCriacao" Title="Criado Em">
+                                    <CellTemplate Context="cell">
+                                        <MudText>@cell.Item.DataCriacao.ToString("dd/MM/yyyy")</MudText>
+                                    </CellTemplate>
+                                </PropertyColumn>
+                                <TemplateColumn Title="Status" SortBy="x => x.Feito">
+                                    <CellTemplate Context="cell">
+                                        <MudChip Size="Size.Small"
+                                                 Color="@(cell.Item.Feito ? Color.Success : Color.Warning)"
+                                                 Icon="@(cell.Item.Feito ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Schedule)">
+                                            @(cell.Item.Feito ? "Concluída" : "Pendente")
+                                        </MudChip>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                            <PagerContent>
+                                <MudDataGridPager />
+                            </PagerContent>
+                        </MudDataGrid>
+                    </MudPaper>
+
+                    <MudGrid Class="mt-4" GutterSize="3">
+                        <MudItem xs="12" sm="4">
+                            <MudPaper Class="pa-4 d-flex justify-center">
+                                <MudChart ChartType="ChartType.Pie"
+                                          InputData="@inputDataG1"
+                                          InputLabels="@labelsStatus"
+                                          Width="@statusWidth"
+                                          Height="@statusHeight"
+                                          @bind-SelectedIndex="selectedStatusIndex" />
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Bar"
+                                          ChartSeries="@seriesTipoTarefa"
+                                          XAxisLabels="@labelsTipoTarefa"
+                                          Width="@tipoWidth"
+                                          Height="@tipoHeight"
+                                          
+                                          @bind-SelectedIndex="selectedTipoIndex" />
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Line"
+                                          ChartSeries="@seriesTasksOverTime"
+                                          XAxisLabels="@labelsTasksOverTime"
+                                          Width="@lineWidth"
+                                          Height="@lineHeight"
+                                          ChartOptions="@lineChartOptions"
+           
+                                          @bind-SelectedIndex="selectedLineIndex" />
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <!-- Gráficos em tela cheia -->
+                <MudTabPanel Text="Gráficos">
+                    <MudGrid >
+                        <MudItem xs="12" sm="4">
+                            <MudPaper Class="pa-4 d-flex justify-center">
+                                <MudChart ChartType="ChartType.Donut"
+                                          InputData="@inputDataG1"
+                                          InputLabels="@labelsStatus"
+                                          Width="@statusWidth"
+                                          Height="@statusHeight"
+                                          @bind-SelectedIndex="selectedStatusIndex" />
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.StackedBar"
+                                          ChartSeries="@seriesTipoTarefa"
+                                          XAxisLabels="@labelsTipoTarefa"
+                                          Width="@tipoWidth"
+                                          Height="@tipoHeight"
+                                          
+                                          @bind-SelectedIndex="selectedTipoIndex" />
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudPaper Class="pa-4">
+                                <MudChart ChartType="ChartType.Line"
+                                          ChartSeries="@seriesTasksOverTime"
+                                          XAxisLabels="@labelsTasksOverTime"
+                                          Width="@lineWidth"
+                                          Height="@lineHeight"
+                                          ChartOptions="@lineChartOptions"
+                                          
+                                          @bind-SelectedIndex="selectedLineIndex" />
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+            </MudTabs>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<InfluencerTask> tarefas = new();
+    private InfluencerTask tarefaSelecionada;
+    private List<Me2CampanhaModelo> campanhas = new();
+    private List<InfluencerModel> influencers = new();
+    private Me2CampanhaModelo selectedCampanha;
+    private InfluencerModel selectedInfluencer;
+    private DateRange dateRange = new(DateTime.Now.AddMonths(-1), DateTime.Now);
+    private bool isLoading;
+    private string searchString = "";
+
+    public double[]? inputDataG1 { get; set; }
+    public double[]? inputDataG2 { get; set; }
+
+    // KPI
+    private int totalTarefas;
+    private int tarefasConcluidas;
+    private int tarefasPendentes;
+    private int tarefasVencendoSemana;
+
+    // chart data
+    private string[] labelsStatus = { "Concluídas", "Pendentes" };
+    private List<ChartSeries> seriesTipoTarefa = new();
+    private string[] labelsTipoTarefa = Array.Empty<string>();
+    private List<ChartSeries> seriesTasksOverTime = new();
+    private string[] labelsTasksOverTime = Array.Empty<string>();
+
+    // chart settings
+    private int selectedStatusIndex = -1;
+    private int selectedTipoIndex = -1;
+    private int selectedLineIndex = -1;
+    private string statusWidth = "300px", statusHeight = "300px";
+    private string tipoWidth = "400px", tipoHeight = "300px";
+    private string lineWidth = "600px", lineHeight = "300px";
+    private ChartOptions lineChartOptions = new();
+
+    private readonly InfluencerTaskService taskService = new();
+    private AuthUserModel dadosSessaoUsuario;
+    private string storedEmail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await VerificarLoginAsync();
+        await CarregarDadosAsync();
+    }
+
+    private async Task VerificarLoginAsync()
+    {
+        storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+        if (string.IsNullOrEmpty(storedEmail))
+            NavigationManager.NavigateTo("/login");
+        else
+        {
+            dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+            if (dadosSessaoUsuario == null)
+                NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    private async Task CarregarDadosAsync()
+    {
+        isLoading = true;
+
+        var campanhaService = new Me2CampanhaService();
+        var influencerService = new InfluencerFormService();
+
+        if(dadosSessaoUsuario == null)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        campanhas = await campanhaService.GetCampanhasByEmpresaId(dadosSessaoUsuario.Id);
+
+        if (selectedCampanha != null)
+            influencers = await influencerService.GetInfluencersByCampaignIdAsync(selectedCampanha.Id);
+        else
+            influencers.Clear();
+
+        await CarregarTarefasAsync();
+        AtualizarKpi();
+        AtualizarGraficos();
+        inputDataG1 = new double[] { tarefasConcluidas, tarefasPendentes };
+        isLoading = false;
+    }
+
+    private async Task CarregarTarefasAsync()
+    {
+        var all = new List<InfluencerTask>();
+        if (selectedCampanha != null)
+        {
+            if (selectedInfluencer != null)
+                all = await taskService.GetTasksByCampaignAndInfluencer(selectedCampanha.Id, selectedInfluencer.ID);
+            else
+                all = await taskService.GetTasksByCampaign(selectedCampanha.Id);
+        }
+
+        tarefas = all.ToList();
+    }
+
+    private void AtualizarKpi()
+    {
+        totalTarefas = tarefas.Count;
+        tarefasConcluidas = tarefas.Count(t => t.Feito);
+        tarefasPendentes = totalTarefas - tarefasConcluidas;
+        var limite = DateTime.Now.AddDays(7);
+        tarefasVencendoSemana = tarefas.Count(t => t.Prazo.HasValue && t.Prazo.Value <= limite && !t.Feito);
+    }
+
+    private void AtualizarGraficos()
+    {
+        // Tipo Bar
+        var byTipo = tarefas
+            .GroupBy(t => t.Tipo_Tarefa)
+            .Select(g => new { Tipo = g.Key.ToString(), Count = g.Count() })
+            .ToList();
+        seriesTipoTarefa = new()
+        {
+            new ChartSeries { Name = "Quantidade", Data = byTipo.Select(x => (double)x.Count).ToArray() }
+        };
+        labelsTipoTarefa = byTipo.Select(x => x.Tipo).ToArray();
+
+        // Line chart: tarefas criadas ao longo do período
+        var byDate = tarefas
+            .GroupBy(t => t.DataCriacao.Date)
+            .Select(g => new { Date = g.Key, Count = g.Count() })
+            .OrderBy(x => x.Date)
+            .ToList();
+        seriesTasksOverTime = new()
+        {
+            new ChartSeries { Name = "Criadas", Data = byDate.Select(x => (double)x.Count).ToArray() }
+        };
+        labelsTasksOverTime = byDate.Select(x => x.Date.ToString("dd/MM")).ToArray();
+    }
+
+    private async Task OnCampanhaSelected(Me2CampanhaModelo campanha)
+    {
+        selectedCampanha = campanha;
+        selectedInfluencer = null;
+        await CarregarDadosAsync();
+    }
+
+    private async Task OnInfluencerSelected(InfluencerModel influencer)
+    {
+        selectedInfluencer = influencer;
+        await CarregarDadosAsync();
+    }
+
+    private async Task OnPeriodChanged(DateRange range)
+    {
+        dateRange = range;
+        await CarregarDadosAsync();
+    }
+
+    private void OnSelectedTaskChanged(InfluencerTask task)
+    {
+        tarefaSelecionada = task;
+    }
+
+    private Color GetTipoTarefaColor(TipoTarefa tipo) => tipo switch
+    {
+        TipoTarefa.Stories     => Color.Info,
+        TipoTarefa.Publicacao  => Color.Success,
+        TipoTarefa.Reels       => Color.Primary,
+        _                      => Color.Default
+    };
+
+    private string GetTipoTarefaText(TipoTarefa tipo) => tipo switch
+    {
+        TipoTarefa.Stories     => "Stories",
+        TipoTarefa.Publicacao  => "Publicação",
+        TipoTarefa.Reels       => "Reels",
+        _                      => "Desconhecido"
+    };
+}

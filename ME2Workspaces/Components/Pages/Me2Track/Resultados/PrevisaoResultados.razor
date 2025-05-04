@@ -120,6 +120,7 @@
                         <MudItem xs="12" sm="6">
                             <MudPaper Class="pa-4">
                                 <MudChart ChartType="ChartType.Line"
+                                            
                                           ChartSeries="@seriesPrevisaoVisualizacoes"
                                           XAxisLabels="@labelsPrevisao"
                                           Width="100%" Height="300px" />
@@ -170,7 +171,7 @@
                             </MudItem>
                             <MudItem xs="12">
                                 <MudButton Variant="Variant.Filled"
-                                            Style="@($"background-color:#2F67FF;color:#FFFF")" 
+                                           Style="@($"background-color:#2F67FF;color:#FFFF")"
                                            OnClick="@TreinarModelo"
                                            Class="mt-4">
                                     Treinar Modelo Novamente
@@ -185,9 +186,18 @@
 </MudContainer>
 
 @code {
+
+    // opções para esconder os labels e linhas do eixo X
+    private ChartOptions chartOptionsEscondeEixoX = new ChartOptions
+        {
+            
+            ShowLabels=false,
+            MaxNumYAxisTicks=5
+            
+        };
+
     private List<Me2CampanhaModelo> campanhas = new();
     private List<InfluencerModel> influencers = new();
-    private List<Insight> historicalInsights = new();
     private Me2CampanhaModelo selectedCampanha;
     private InfluencerModel selectedInfluencer;
     private TipoRedeSocial? selectedRedeSocial;
@@ -223,7 +233,7 @@
     {
         [LoadColumn(0)]
         public float Visualizacoes { get; set; }
-
+         
         [LoadColumn(1)]
         public float Interacoes { get; set; }
 
@@ -263,12 +273,12 @@
     private IEstimator<ITransformer> GetTrainer(MLContext mlContext, string algoritmo)
     {
         var options = new SdcaRegressionTrainer.Options
-        {
-            LabelColumnName = "Label",
-            FeatureColumnName = "Features",
-            MaximumNumberOfIterations = 100,
-            L2Regularization = 0.01f
-        };
+            {
+                LabelColumnName = "Label",
+                FeatureColumnName = "Features",
+                MaximumNumberOfIterations = 100,
+                L2Regularization = 0.01f
+            };
 
         return algoritmo switch
         {
@@ -283,7 +293,9 @@
     {
         try
         {
-            var dadosTreinamento = await CarregarDadosTreinamento();
+            //var dadosTreinamento = await CarregarDadosTreinamento();
+
+            var dadosTreinamento = await CarregarTodosInsightsParaTreinamento();
 
             if (!dadosTreinamento.Any())
             {
@@ -293,13 +305,13 @@
 
             // Convert insights to training data
             var trainingData = dadosTreinamento.Select(i => new DadosTreinamento
-            {
-                Visualizacoes = i.Visualizacoes,
-                Interacoes = i.Interacoes,
-                ContasAlcancadas = i.ContasAlcancadas,
-                ContasComEngajamento = i.ContasComEngajamento,
-                AtividadeDoPerfil = i.AtividadeDoPerfil.ToString()
-            }).ToList();
+                {
+                    Visualizacoes = i.Visualizacoes,
+                    Interacoes = i.Interacoes,
+                    ContasAlcancadas = i.ContasAlcancadas,
+                    ContasComEngajamento = i.ContasComEngajamento,
+                    AtividadeDoPerfil = i.AtividadeDoPerfil.ToString()
+                }).ToList();
 
             var trainingDataView = mlContext.Data.LoadFromEnumerable(trainingData);
 
@@ -360,18 +372,24 @@
         foreach (var data in datasPrevisor)
         {
             var dadosPrevisao = new DadosTreinamento
-            {
-                Interacoes = mediaInteracoes,
-                ContasAlcancadas = mediaAlcance,
-                ContasComEngajamento = mediaEngajamento,
-                AtividadeDoPerfil = selectedRedeSocial?.ToString() ?? "Instagram"
-            };
+                {
+                    Interacoes = mediaInteracoes,
+                    ContasAlcancadas = mediaAlcance,
+                    ContasComEngajamento = mediaEngajamento,
+                    AtividadeDoPerfil = selectedRedeSocial?.ToString() ?? "Instagram"
+                };
 
             var previsaoVis = predEngineVisualizacoes.Predict(dadosPrevisao);
             var previsaoEng = predEngineEngajamento.Predict(dadosPrevisao);
 
             previsoesVisualizacoesList.Add(Math.Max(0, previsaoVis.Previsao));
-            previsoesEngajamentoList.Add(Math.Max(0, Math.Min(1, previsaoEng.Previsao / mediaAlcance)));
+
+            double engPrev = 0;
+            if (mediaAlcance > 0)
+                engPrev = Math.Max(0,
+                            Math.Min(1, previsaoEng.Previsao / mediaAlcance));
+            previsoesEngajamentoList.Add(engPrev);
+
         }
 
         previsaoVisualizacoes = previsoesVisualizacoesList.Average();
@@ -379,7 +397,7 @@
         previsaoConversoes = previsaoVisualizacoes * await CalcularTaxaConversaoMedia();
         roiPrevisto = CalcularROIPrevisto(previsaoConversoes);
 
-        AtualizarNiveisConfianca();
+        await AtualizarNiveisConfianca();
         AtualizarGraficos(previsoesVisualizacoesList, previsoesEngajamentoList, datasPrevisor);
         AtualizarPrevisoesDetalhadas(previsoesVisualizacoesList, previsoesEngajamentoList, datasPrevisor);
 
@@ -406,7 +424,7 @@
             }
         };
 
-        labelsPrevisao = datas.Select(d => d.ToString("dd/MM")).ToArray();
+        labelsPrevisao = datas.Select(d => d.ToString("dd")).ToArray();
     }
 
     private void AtualizarPrevisoesDetalhadas(List<double> previsoesVisualizacoes, List<double> previsoesEngajamento, List<DateTime> datas)
@@ -456,9 +474,13 @@
 
     private async Task<float> CalcularMediaInteracoes()
     {
-        if (!historicalInsights.Any()) return 0;
 
         var insightsRelevantes = await FiltrarInsightsRelevantes();
+        if (!insightsRelevantes.Any())
+        {
+            Snackbar.Add("Sem dados suficientes para gerar previsão", Severity.Warning);
+            return 0;
+        }
 
         if (!insightsRelevantes.Any()) return 0;
 
@@ -468,9 +490,13 @@
 
     private async Task<float> CalcularMediaAlcance()
     {
-        if (!historicalInsights.Any()) return 0;
 
         var insightsRelevantes = await FiltrarInsightsRelevantes();
+        if (!insightsRelevantes.Any())
+        {
+            Snackbar.Add("Sem dados suficientes para gerar previsão", Severity.Warning);
+            return 0;
+        }
 
         if (!insightsRelevantes.Any()) return 0;
 
@@ -480,14 +506,20 @@
 
     private async Task<float> CalcularMediaEngajamento()
     {
-        if (!historicalInsights.Any()) return 0;
 
         var insightsRelevantes = await FiltrarInsightsRelevantes();
 
-        if (!insightsRelevantes.Any()) return 0;
+        if (!insightsRelevantes.Any())
+        {
+
+            Snackbar.Add("Sem dados suficientes para gerar previsão", Severity.Warning);
+            return 0;
+        }
+
 
         var mediaEngajamento = insightsRelevantes
-            .Average(i => {
+            .Average(i =>
+            {
                 var totalInteracoes = i.Interacoes + i.Curtidas + i.Compartilhamentos + i.Respostas;
                 var alcanceTotal = i.ContasAlcancadas > 0 ? i.ContasAlcancadas : 1;
                 return (double)totalInteracoes / alcanceTotal;
@@ -498,20 +530,28 @@
 
     private async Task<double> CalcularTaxaConversaoMedia()
     {
-        if (!historicalInsights.Any()) return 0;
 
         var insightsRelevantes = await FiltrarInsightsRelevantes();
 
         if (!insightsRelevantes.Any()) return 0;
 
         var mediaConversao = insightsRelevantes
-            .Average(i => {
+            .Average(i =>
+            {
                 var alcanceTotal = i.ContasAlcancadas > 0 ? i.ContasAlcancadas : 1;
                 var engajamentoTotal = i.ContasComEngajamento;
                 return (double)engajamentoTotal / alcanceTotal;
             });
 
         return mediaConversao;
+    }
+
+    public async Task<List<Insight>> CarregarTodosInsightsParaTreinamento()
+    {
+        InsightService servicoInsights = new();
+        var insights = await servicoInsights.GetInsights();
+
+        return insights;
     }
 
     private async Task<List<Insight>> FiltrarInsightsRelevantes()
@@ -539,7 +579,7 @@
 
     private double CalcularROIPrevisto(double conversoes)
     {
-        if(selectedCampanha == null)
+        if (selectedCampanha == null)
         {
             Snackbar.Add("Erro ao selecionar campanha..");
             return 0;
@@ -556,7 +596,7 @@
     private async Task AtualizarNiveisConfianca()
     {
         var insightsRelevantes = await FiltrarInsightsRelevantes();
-        
+
         if (!insightsRelevantes.Any())
         {
             confiancaVisualizacoes = 0.5;
