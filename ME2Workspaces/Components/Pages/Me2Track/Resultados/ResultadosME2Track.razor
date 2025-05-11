@@ -362,8 +362,7 @@
         insights = await CarregarInsightsFiltrados();
     }
 
-    public string storedEmail { get; set; }
-    public AuthUserModel dadosSessaoUsuario { get; set; }
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -377,7 +376,8 @@
             await CarregarDadosAvancados();
         }
     }
-
+    public string storedEmail { get; set; }
+    public AuthUserModel dadosSessaoUsuario { get; set; }
     /// <summary>
     /// Recupera dados do usuário logado (exemplo de SessionStorage).
     /// </summary>

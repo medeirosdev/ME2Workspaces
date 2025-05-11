@@ -1,0 +1,145 @@
+﻿@page "/administrarcontas"
+@using Me2Workspaces.ModulosME2.DBUser
+@rendermode InteractiveServer
+<MudPaper Class="mx-auto mt-6 p-6 rounded-2xl" Elevation="6" Style="max-width:1000px; background:#f9f9f9; padding:30px; border-radius:20px;">
+    <MudText Typo="Typo.h5" GutterBottom="true" Class="text-primary">Administração de Contas</MudText>
+    <div style="overflow-x:auto;">
+        <MudTable Items="@users" Elevation="0" Bordered="false" Striped="true" Dense="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh Class="bg-primary text-white">Email</MudTh>
+                <MudTh Class="bg-primary text-white">Tipo de Conta</MudTh>
+                <MudTh Class="bg-primary text-white">Admin</MudTh>
+                <MudTh Class="bg-primary text-white">Contrato</MudTh>
+                <MudTh Class="bg-primary text-white">Ações</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Email">@context.Email</MudTd>
+                <MudTd DataLabel="Tipo de Conta">
+                    @(_accountTypes.TryGetValue(context.TipoDaConta, out var tipo) ? tipo : "Não definido")
+                </MudTd>
+                <MudTd DataLabel="Admin">
+                    <MudCheckBox  Value="@context.ADMIN" T="bool" Color="Color.Secondary"
+                                 ValueChanged="@(() => OnAdminToggle(context))" />
+                </MudTd>
+                <MudTd DataLabel="Contrato">
+                                    <MudSelect T="int" Value="context.TipoDoContrato"
+                           ValueChanged="@(async (val) => await OnContratoChanged(context, val))"
+                           Dense="true" Class="w-full">
+                    @foreach (var kvp in _accountTypes)
+                    {
+                        <MudSelectItem Value="@kvp.Key">@kvp.Value</MudSelectItem>
+                    }
+                </MudSelect>
+                </MudTd>
+                <MudTd DataLabel="Ações">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   OnClick="@(() => OnDelete(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </div>
+</MudPaper>
+
+@code {
+    private List<UserService.AuthUserModel> users = new();
+    private UserService userService = new UserService();
+    private Dictionary<int, string> _accountTypes = new()
+    {
+        { 0,  "Não definido"         },
+        { 1,  "Pago Mensal"          },
+        { 2,  "Pago Trimestral"      },
+        { 3,  "Pagamento Único"      },
+        { 4,  "Parceria"            },
+        { 5,  "Beta Tester"         }
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await VerificarLogin();
+        }
+    }
+
+    public string storedEmail { get; set; }
+    public AuthUserModel dadosSessaoUsuario { get; set; }
+    /// <summary>
+    /// Recupera dados do usuário logado (exemplo de SessionStorage).
+    /// </summary>
+    public async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+                if (dadosSessaoUsuario == null)
+                    NavigationManager.NavigateTo("/");
+
+                if(dadosSessaoUsuario.ADMIN == false)
+                    NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await userService.GettAllUsers();
+        if (result != null)
+        {
+            users = result.ToList();
+        }
+        StateHasChanged();
+    }
+
+    private async Task OnAdminToggle(UserService.AuthUserModel user)
+    {
+        user.ADMIN = !user.ADMIN;
+        var result = await userService.UpdateUser(user);
+
+        if(result == true){
+            Snackbar.Add($"Alterado com sucesso!", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add($"Erro ao alterar o status de admin.", Severity.Error);
+        }
+    }
+
+    private async Task OnContratoChanged(UserService.AuthUserModel user, int tipoContrato)
+    {
+        user.TipoDoContrato = tipoContrato;
+         var result = await userService.UpdateUser(user);
+
+        if (result == true)
+        {
+            Snackbar.Add($"Contrato Alterado com sucesso!", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add($"Erro ao alterar Contrato!", Severity.Error);
+        }
+    }
+
+    private async Task OnDelete(UserService.AuthUserModel user)
+    {
+        var ok = await userService.DeleteUser(user.Id);
+        if (ok)
+        {
+            users.Remove(user);
+            Snackbar.Add($"Excluído com sucesso!", Severity.Success);
+            StateHasChanged();
+        }
+        else
+        {
+            Snackbar.Add($"Erro ao Excluir!", Severity.Error);
+        }
+    }
+}

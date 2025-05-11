@@ -1,0 +1,56 @@
+﻿@page "/feedbackUsuario"
+@using ME2Workspaces.ModulosME2.FeedbackUsuarios
+@rendermode InteractiveServer
+<MudPaper Class="mx-auto mt-8 p-6" Elevation="4" Style="max-width:600px; padding:20px;border-radius:20px;">
+    <MudText Typo="Typo.h4" GutterBottom="true">Envie seu Feedback</MudText>
+
+        <MudTextField @bind-Value="@feedbackModel.NomeUsuario" Label="Nome" Required="true" Variant="Variant.Filled" Class="mt-4" />
+    <MudTextField @bind-Value="@feedbackModel.EmailUsuario" Label="Email" Required="true" Variant="Variant.Filled" Class="mt-4" />
+    <MudTextField @bind-Value="@feedbackModel.Feedback" Label="Feedback" Required="true" Variant="Variant.Filled" Class="mt-4" Lines="4" TextArea="true" />
+
+    <MudButton OnClick="HandleValidSubmit" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Send" Class="mt-6" FullWidth="true" Disabled="loading">
+            @if (!loading)
+            {
+                <span>Enviar Feedback</span>
+            }
+            else
+            {
+                <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+            }
+        </MudButton>
+</MudPaper>
+
+@code {
+    private bool loading;
+
+    public ME2Workspaces.ModulosME2.FeedbackUsuarios.FeedbackUsuario feedbackModel { get; set; } = new();
+
+
+    private async Task HandleValidSubmit()
+    {
+        loading = true;
+        try
+        {
+            FeedbackUsuarioService FeedbackService = new();
+            feedbackModel.DataCriacao = DateTime.Now;
+            var id = await FeedbackService.CreateFeedback(feedbackModel);
+            if (id == 0)
+            {
+                Snackbar.Add("Erro ao enviar feedback. Tente novamente.", Severity.Error);
+                return;
+            }
+
+            Snackbar.Add($"Feedback enviado com sucesso! Id: {id}", Severity.Success);
+
+            feedbackModel = new();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao enviar feedback: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

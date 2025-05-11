@@ -1,4 +1,4 @@
-﻿@page "/insights"
+﻿@page "/ocrme2"
 
 @using System.Text.RegularExpressions
 @using Azure
@@ -13,8 +13,7 @@
 
 @inject ISnackbar Snackbar
 
-<MudDialog Style="width: 800px; max-height: 90vh;border-radius:20px;">
-    <TitleContent>
+<MudContainer Style="width: 800px; max-height: 90vh;border-radius:20px;">
         <div class="d-flex align-center">
             @if (novoItem)
             {
@@ -27,9 +26,7 @@
                 <MudText Typo="Typo.h5">Editar Insight</MudText>
             }
         </div>
-    </TitleContent>
 
-    <DialogContent>
         <MudForm @ref="form" Class="mt-4">
             <MudGrid Spacing="3">
                 <!-- Seção Principal -->
@@ -83,7 +80,7 @@
                             <MudItem xs="12" sm="6" Class="d-flex align-center">
                                 <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles">
                                     <ActivatorContent>
-                                        <MudButton Variant="Variant.Filled"  Style="@($"background-color:#2F67FF;color:#FFFF")"  StartIcon="@Icons.Material.Filled.Image">
+                                        <MudButton Variant="Variant.Filled" Style="@($"background-color:#2F67FF;color:#FFFF")" StartIcon="@Icons.Material.Filled.Image">
                                             Upload Imagem
                                         </MudButton>
                                     </ActivatorContent>
@@ -108,7 +105,7 @@
                         </MudList>
 
                         <MudButton Variant="Variant.Filled"
-                                    Style="@($"background-color:#2F67FF;color:#FFFF")" 
+                                   Style="@($"background-color:#2F67FF;color:#FFFF")"
                                    OnClick="ProcessImage"
                                    Disabled="!(files?.Count > 0)">
                             Ler Imagem
@@ -227,17 +224,14 @@
                 </MudItem>
             </MudGrid>
         </MudForm>
-    </DialogContent>
-
-    <DialogActions>
-        <MudButton OnClick="Cancelar"
+        @* <MudButton OnClick="Cancelar"
                    Color="Color.Default"
                    Variant="Variant.Text"
                    StartIcon="@Icons.Material.Filled.Cancel">
             Cancelar
-        </MudButton>
-        <MudButton OnClick="Salvar"
-                    Style="@($"background-color:#2F67FF;color:#FFFF")" 
+        </MudButton> *@
+       @*  <MudButton OnClick="Salvar"
+                   Style="@($"background-color:#2F67FF;color:#FFFF")"
                    Variant="Variant.Filled"
                    StartIcon="@Icons.Material.Filled.Save"
                    Disabled="@(_isSaving)">
@@ -250,11 +244,10 @@
             {
                 @("Salvar")
             }
-        </MudButton>
-    </DialogActions>
-</MudDialog>
+        </MudButton> *@
+</MudContainer>
 
-@code{
+@code {
     private const string formRecognizerEndpoint = "https://me2reconimages.cognitiveservices.azure.com/";
     private const string formRecognizerApiKey = "ChWxD5aCUIXj9HpUtSTpXaWejuQkm2kgSC3I7EkUTWRldJWkKgroJQQJ99BEACZoyfiXJ3w3AAALACOGDq77";
 
@@ -264,11 +257,11 @@
 @code {
     [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter] public bool novoItem { get; set; }
-    [Parameter] public long insightId { get; set; }
-    [Parameter] public long ID_Influencer { get; set; }
-    [Parameter] public long IDCampanha { get; set; }
-    [Parameter] public long ID_Usuario { get; set; }
+    [Parameter] public bool novoItem { get; set; } = true;
+    [Parameter] public long insightId { get; set; } = 9999;
+    [Parameter] public long ID_Influencer { get; set; } = 9999;
+    [Parameter] public long IDCampanha { get; set; } = 9999;
+    [Parameter] public long ID_Usuario { get; set; } = 9999;
 
     public string languageEng { get; set; } = "eng";
     public string languagePor { get; set; } = "por";
@@ -305,15 +298,15 @@
             else
             {
                 insight = new Insight
-                {
-                    DataInclusao = DateTime.Now,
-                    ID_Influencer = ID_Influencer,
-                    ID_Campanha = IDCampanha,
-                    ID_Usuario = ID_Usuario,
-                    // Inicializa com zeros
-                    TipoInsight = 0,
-                    AtividadeDoPerfil = 0
-                };
+                    {
+                        DataInclusao = DateTime.Now,
+                        ID_Influencer = ID_Influencer,
+                        ID_Campanha = IDCampanha,
+                        ID_Usuario = ID_Usuario,
+                        // Inicializa com zeros
+                        TipoInsight = 0,
+                        AtividadeDoPerfil = 0
+                    };
             }
         }
         catch (Exception ex)
@@ -343,12 +336,12 @@
                     insight.UsernameInfluencer = $"@{influencer.Instagram}";
                 }
 
-                await insightService.CreateInsight(insight);
+                //await insightService.CreateInsight(insight);
                 Snackbar.Add("Insight criado com sucesso!", Severity.Success);
             }
             else
             {
-                await insightService.UpdateInsight(insight);
+                //await insightService.UpdateInsight(insight);
                 Snackbar.Add("Insight atualizado com sucesso!", Severity.Success);
             }
 
@@ -413,141 +406,141 @@
         Snackbar.Add("Imagem processada com Azure Form Recognizer!", Severity.Success);
     }
 
-//     private void ParseFormResult(AnalyzeResult result)
-//     {
-//         // junta todo o texto, normalizando
-//         var allText = string.Join("\n", result.Pages
-//                                     .SelectMany(p => p.Lines)
-//                                     .Select(l => l.Content))
-//                          .Replace(".", "")
-//                          .Replace(",", "")
-//                          .ToLower();
+    //     private void ParseFormResult(AnalyzeResult result)
+    //     {
+    //         // junta todo o texto, normalizando
+    //         var allText = string.Join("\n", result.Pages
+    //                                     .SelectMany(p => p.Lines)
+    //                                     .Select(l => l.Content))
+    //                          .Replace(".", "")
+    //                          .Replace(",", "")
+    //                          .ToLower();
 
-//         // dicionário de regex para cada campo
-//         var patterns = new Dictionary<string, string[]>
-// {
-//     {"Visualizacoes", new[] { @"visualiza[cç][õo]es?[:\s]*(\d+)", @"(\d+)\s*visualiza[cç][õo]es?" }},
-//     {"Interacoes",    new[] { @"intera[cç][õo]es?[:\s]*(\d+)",   @"(\d+)\s*intera[cç][õo]es?"   }},
-//     {"Curtidas",      new[] { @"curtidas?[:\s]*(\d+)",           @"(\d+)\s*curtidas?"           }},
-//     {"Respostas",     new[] { @"respostas?[:\s]*(\d+)",          @"(\d+)\s*respostas?"          }},
-//     {"Compartilhamentos", new[] { @"compartilhamentos?[:\s]*(\d+)", @"(\d+)\s*compartilhamentos?" }},
-//     {"ToquesFigurinha",   new[] { @"toques? em figurinha[:\s]*(\d+)", @"(\d+)\s*toques? em figurinha" }},
-//     {"CliquesLink",       new[] { @"cliques? no link[:\s]*(\d+)",    @"(\d+)\s*cliques? no link"    }},
-//     {"Avanco",            new[] { @"avan[cç]os?[:\s]*(\d+)",         @"(\d+)\s*avan[cç]os?"         }},
-//     {"ProximoStory",      new[] { @"pr[oó]ximo story[:\s]*(\d+)",    @"(\d+)\s*pr[oó]ximo story"    }},
-//     {"Voltar",            new[] { @"voltar[:\s]*(\d+)",             @"(\d+)\s*voltar"              }},
-//     {"Saiu",              new[] { @"saiu[:\s]*(\d+)",               @"(\d+)\s*saiu"                }},
-//     {"VisitasPerfil",     new[] { @"visitas ao perfil[:\s]*(\d+)",   @"(\d+)\s*visitas ao perfil"   }},
-//     {"ToquesLinkExt",     new[] { @"toques em links externos[:\s]*(\d+)", @"(\d+)\s*toques em links externos" }},
-//     {"NovosSeguidores",   new[] { @"come[cç]aram a seguir[:\s]*(\d+)", @"(\d+)\s*come[cç]aram a seguir" }},
-//     {"ContasAlcancadas",      new[] { @"contas alcan[cç]adas[:\s]*(\d+)", @"(\d+)\s*contas alcan[cç]adas" }},
-//     {"ContasComEngajamento",  new[] { @"contas com engajamento[:\s]*(\d+)", @"(\d+)\s*contas com engajamento" }},
-// };
+    //         // dicionário de regex para cada campo
+    //         var patterns = new Dictionary<string, string[]>
+    // {
+    //     {"Visualizacoes", new[] { @"visualiza[cç][õo]es?[:\s]*(\d+)", @"(\d+)\s*visualiza[cç][õo]es?" }},
+    //     {"Interacoes",    new[] { @"intera[cç][õo]es?[:\s]*(\d+)",   @"(\d+)\s*intera[cç][õo]es?"   }},
+    //     {"Curtidas",      new[] { @"curtidas?[:\s]*(\d+)",           @"(\d+)\s*curtidas?"           }},
+    //     {"Respostas",     new[] { @"respostas?[:\s]*(\d+)",          @"(\d+)\s*respostas?"          }},
+    //     {"Compartilhamentos", new[] { @"compartilhamentos?[:\s]*(\d+)", @"(\d+)\s*compartilhamentos?" }},
+    //     {"ToquesFigurinha",   new[] { @"toques? em figurinha[:\s]*(\d+)", @"(\d+)\s*toques? em figurinha" }},
+    //     {"CliquesLink",       new[] { @"cliques? no link[:\s]*(\d+)",    @"(\d+)\s*cliques? no link"    }},
+    //     {"Avanco",            new[] { @"avan[cç]os?[:\s]*(\d+)",         @"(\d+)\s*avan[cç]os?"         }},
+    //     {"ProximoStory",      new[] { @"pr[oó]ximo story[:\s]*(\d+)",    @"(\d+)\s*pr[oó]ximo story"    }},
+    //     {"Voltar",            new[] { @"voltar[:\s]*(\d+)",             @"(\d+)\s*voltar"              }},
+    //     {"Saiu",              new[] { @"saiu[:\s]*(\d+)",               @"(\d+)\s*saiu"                }},
+    //     {"VisitasPerfil",     new[] { @"visitas ao perfil[:\s]*(\d+)",   @"(\d+)\s*visitas ao perfil"   }},
+    //     {"ToquesLinkExt",     new[] { @"toques em links externos[:\s]*(\d+)", @"(\d+)\s*toques em links externos" }},
+    //     {"NovosSeguidores",   new[] { @"come[cç]aram a seguir[:\s]*(\d+)", @"(\d+)\s*come[cç]aram a seguir" }},
+    //     {"ContasAlcancadas",      new[] { @"contas alcan[cç]adas[:\s]*(\d+)", @"(\d+)\s*contas alcan[cç]adas" }},
+    //     {"ContasComEngajamento",  new[] { @"contas com engajamento[:\s]*(\d+)", @"(\d+)\s*contas com engajamento" }},
+    // };
 
-//         var found = new Dictionary<string, long>();
-//         foreach (var kv in patterns)
-//         {
-//             foreach (var pat in kv.Value)
-//             {
-//                 var m = Regex.Match(allText, pat, RegexOptions.IgnoreCase);
-//                 if (m.Success && long.TryParse(m.Groups[1].Value, out var v))
-//                 {
-//                     found[kv.Key] = v;
-//                     break;
-//                 }
-//             }
-//         }
+    //         var found = new Dictionary<string, long>();
+    //         foreach (var kv in patterns)
+    //         {
+    //             foreach (var pat in kv.Value)
+    //             {
+    //                 var m = Regex.Match(allText, pat, RegexOptions.IgnoreCase);
+    //                 if (m.Success && long.TryParse(m.Groups[1].Value, out var v))
+    //                 {
+    //                     found[kv.Key] = v;
+    //                     break;
+    //                 }
+    //             }
+    //         }
 
-//         // preenche o insight
-//         if (found.TryGetValue("Visualizacoes", out var vis)) insight.Visualizacoes = vis;
-//         if (found.TryGetValue("Interacoes", out var it)) insight.Interacoes = it;
-//         if (found.TryGetValue("Curtidas", out var cu)) insight.Curtidas = (int)cu;
-//         if (found.TryGetValue("Respostas", out var re)) insight.Respostas = (int)re;
-//         if (found.TryGetValue("Compartilhamentos", out var cp)) insight.Compartilhamentos = (int)cp;
-//         if (found.TryGetValue("ToquesFigurinha", out var tf)) insight.AlcanceSeguidores = (int)tf;
-//         if (found.TryGetValue("CliquesLink", out var cl)) insight.ContasAlcancadas = (int)cl;
-//         if (found.TryGetValue("Avanco", out var av)) insight.Avanco = (int)av;
-//         if (found.TryGetValue("ProximoStory", out var ps)) insight.ProximoStory = (int)ps;
-//         if (found.TryGetValue("Voltar", out var vo)) insight.Voltar = (int)vo;
-//         if (found.TryGetValue("Saiu", out var sa)) insight.Saiu = (int)sa;
-//         if (found.TryGetValue("VisitasPerfil", out var vp)) insight.VisitasAoPerfil = (int)vp;
-//         if (found.TryGetValue("ToquesLinkExt", out var tl)) insight.AlcanceSeguidores = (int)tl;
-//         if (found.TryGetValue("NovosSeguidores", out var ns)) insight.ComecaramASeguir = (int)ns;
-//         if (found.TryGetValue("ContasAlcancadas", out var ca)) insight.ContasAlcancadas = (int)ca;
-//         if (found.TryGetValue("ContasComEngajamento", out var ce)) insight.ContasComEngajamento = (int)ce;
+    //         // preenche o insight
+    //         if (found.TryGetValue("Visualizacoes", out var vis)) insight.Visualizacoes = vis;
+    //         if (found.TryGetValue("Interacoes", out var it)) insight.Interacoes = it;
+    //         if (found.TryGetValue("Curtidas", out var cu)) insight.Curtidas = (int)cu;
+    //         if (found.TryGetValue("Respostas", out var re)) insight.Respostas = (int)re;
+    //         if (found.TryGetValue("Compartilhamentos", out var cp)) insight.Compartilhamentos = (int)cp;
+    //         if (found.TryGetValue("ToquesFigurinha", out var tf)) insight.AlcanceSeguidores = (int)tf;
+    //         if (found.TryGetValue("CliquesLink", out var cl)) insight.ContasAlcancadas = (int)cl;
+    //         if (found.TryGetValue("Avanco", out var av)) insight.Avanco = (int)av;
+    //         if (found.TryGetValue("ProximoStory", out var ps)) insight.ProximoStory = (int)ps;
+    //         if (found.TryGetValue("Voltar", out var vo)) insight.Voltar = (int)vo;
+    //         if (found.TryGetValue("Saiu", out var sa)) insight.Saiu = (int)sa;
+    //         if (found.TryGetValue("VisitasPerfil", out var vp)) insight.VisitasAoPerfil = (int)vp;
+    //         if (found.TryGetValue("ToquesLinkExt", out var tl)) insight.AlcanceSeguidores = (int)tl;
+    //         if (found.TryGetValue("NovosSeguidores", out var ns)) insight.ComecaramASeguir = (int)ns;
+    //         if (found.TryGetValue("ContasAlcancadas", out var ca)) insight.ContasAlcancadas = (int)ca;
+    //         if (found.TryGetValue("ContasComEngajamento", out var ce)) insight.ContasComEngajamento = (int)ce;
 
-//         Console.WriteLine(insight.AlcanceSeguidores);
+    //         Console.WriteLine(insight.AlcanceSeguidores);
 
-//         StateHasChanged();
-//     }
+    //         StateHasChanged();
+    //     }
 
-//     private void ParseFormResult(AnalyzeResult result)
-//     {
-//         // junta todo o texto, normalizando
-//         var allText = string.Join("\n", result.Pages
-//                                     .SelectMany(p => p.Lines)
-//                                     .Select(l => l.Content))
-//                          .Replace(".", "")
-//                          .Replace(",", "")
-//                          .ToLower();
+    //     private void ParseFormResult(AnalyzeResult result)
+    //     {
+    //         // junta todo o texto, normalizando
+    //         var allText = string.Join("\n", result.Pages
+    //                                     .SelectMany(p => p.Lines)
+    //                                     .Select(l => l.Content))
+    //                          .Replace(".", "")
+    //                          .Replace(",", "")
+    //                          .ToLower();
 
-//         // dicionário de regex para cada campo
-//         var patterns = new Dictionary<string, string[]>
-// {
-//     {"Visualizacoes", new[] { @"visualiza[cç][õo]es?[:\s]*(\d+)", @"(\d+)\s*visualiza[cç][õo]es?" }},
-//     {"Interacoes",    new[] { @"intera[cç][õo]es?[:\s]*(\d+)",   @"(\d+)\s*intera[cç][õo]es?"   }},
-//     {"Curtidas",      new[] { @"curtidas?[:\s]*(\d+)",           @"(\d+)\s*curtidas?"           }},
-//     {"Respostas",     new[] { @"respostas?[:\s]*(\d+)",          @"(\d+)\s*respostas?"          }},
-//     {"Compartilhamentos", new[] { @"compartilhamentos?[:\s]*(\d+)", @"(\d+)\s*compartilhamentos?" }},
-//     {"ToquesFigurinha",   new[] { @"toques? em figurinha[:\s]*(\d+)", @"(\d+)\s*toques? em figurinha" }},
-//     {"CliquesLink",       new[] { @"cliques? no link[:\s]*(\d+)",    @"(\d+)\s*cliques? no link"    }},
-//     {"Avanco",            new[] { @"avan[cç]os?[:\s]*(\d+)",         @"(\d+)\s*avan[cç]os?"         }},
-//     {"ProximoStory",      new[] { @"pr[oó]ximo story[:\s]*(\d+)",    @"(\d+)\s*pr[oó]ximo story"    }},
-//     {"Voltar",            new[] { @"voltar[:\s]*(\d+)",             @"(\d+)\s*voltar"              }},
-//     {"Saiu",              new[] { @"saiu[:\s]*(\d+)",               @"(\d+)\s*saiu"                }},
-//     {"VisitasPerfil",     new[] { @"visitas ao perfil[:\s]*(\d+)",   @"(\d+)\s*visitas ao perfil"   }},
-//     {"ToquesLinkExt",     new[] { @"toques em links externos[:\s]*(\d+)", @"(\d+)\s*toques em links externos" }},
-//     {"NovosSeguidores",   new[] { @"come[cç]aram a seguir[:\s]*(\d+)", @"(\d+)\s*come[cç]aram a seguir" }},
-//     {"ContasAlcancadas",      new[] { @"contas alcan[cç]adas[:\s]*(\d+)", @"(\d+)\s*contas alcan[cç]adas" }},
-//     {"ContasComEngajamento",  new[] { @"contas com engajamento[:\s]*(\d+)", @"(\d+)\s*contas com engajamento" }},
-// };
+    //         // dicionário de regex para cada campo
+    //         var patterns = new Dictionary<string, string[]>
+    // {
+    //     {"Visualizacoes", new[] { @"visualiza[cç][õo]es?[:\s]*(\d+)", @"(\d+)\s*visualiza[cç][õo]es?" }},
+    //     {"Interacoes",    new[] { @"intera[cç][õo]es?[:\s]*(\d+)",   @"(\d+)\s*intera[cç][õo]es?"   }},
+    //     {"Curtidas",      new[] { @"curtidas?[:\s]*(\d+)",           @"(\d+)\s*curtidas?"           }},
+    //     {"Respostas",     new[] { @"respostas?[:\s]*(\d+)",          @"(\d+)\s*respostas?"          }},
+    //     {"Compartilhamentos", new[] { @"compartilhamentos?[:\s]*(\d+)", @"(\d+)\s*compartilhamentos?" }},
+    //     {"ToquesFigurinha",   new[] { @"toques? em figurinha[:\s]*(\d+)", @"(\d+)\s*toques? em figurinha" }},
+    //     {"CliquesLink",       new[] { @"cliques? no link[:\s]*(\d+)",    @"(\d+)\s*cliques? no link"    }},
+    //     {"Avanco",            new[] { @"avan[cç]os?[:\s]*(\d+)",         @"(\d+)\s*avan[cç]os?"         }},
+    //     {"ProximoStory",      new[] { @"pr[oó]ximo story[:\s]*(\d+)",    @"(\d+)\s*pr[oó]ximo story"    }},
+    //     {"Voltar",            new[] { @"voltar[:\s]*(\d+)",             @"(\d+)\s*voltar"              }},
+    //     {"Saiu",              new[] { @"saiu[:\s]*(\d+)",               @"(\d+)\s*saiu"                }},
+    //     {"VisitasPerfil",     new[] { @"visitas ao perfil[:\s]*(\d+)",   @"(\d+)\s*visitas ao perfil"   }},
+    //     {"ToquesLinkExt",     new[] { @"toques em links externos[:\s]*(\d+)", @"(\d+)\s*toques em links externos" }},
+    //     {"NovosSeguidores",   new[] { @"come[cç]aram a seguir[:\s]*(\d+)", @"(\d+)\s*come[cç]aram a seguir" }},
+    //     {"ContasAlcancadas",      new[] { @"contas alcan[cç]adas[:\s]*(\d+)", @"(\d+)\s*contas alcan[cç]adas" }},
+    //     {"ContasComEngajamento",  new[] { @"contas com engajamento[:\s]*(\d+)", @"(\d+)\s*contas com engajamento" }},
+    // };
 
-//         var found = new Dictionary<string, long>();
-//         foreach (var kv in patterns)
-//         {
-//             foreach (var pat in kv.Value)
-//             {
-//                 var m = Regex.Match(allText, pat, RegexOptions.IgnoreCase);
-//                 if (m.Success && long.TryParse(m.Groups[1].Value, out var v))
-//                 {
-//                     found[kv.Key] = v;
-//                     break;
-//                 }
-//             }
-//         }
+    //         var found = new Dictionary<string, long>();
+    //         foreach (var kv in patterns)
+    //         {
+    //             foreach (var pat in kv.Value)
+    //             {
+    //                 var m = Regex.Match(allText, pat, RegexOptions.IgnoreCase);
+    //                 if (m.Success && long.TryParse(m.Groups[1].Value, out var v))
+    //                 {
+    //                     found[kv.Key] = v;
+    //                     break;
+    //                 }
+    //             }
+    //         }
 
-//         // preenche o insight
-//         if (found.TryGetValue("Visualizacoes", out var vis)) insight.Visualizacoes = vis;
-//         if (found.TryGetValue("Interacoes", out var it)) insight.Interacoes = it;
-//         if (found.TryGetValue("Curtidas", out var cu)) insight.Curtidas = (int)cu;
-//         if (found.TryGetValue("Respostas", out var re)) insight.Respostas = (int)re;
-//         if (found.TryGetValue("Compartilhamentos", out var cp)) insight.Compartilhamentos = (int)cp;
-//         if (found.TryGetValue("ToquesFigurinha", out var tf)) insight.AlcanceSeguidores = (int)tf;
-//         if (found.TryGetValue("CliquesLink", out var cl)) insight.ContasAlcancadas = (int)cl;
-//         if (found.TryGetValue("Avanco", out var av)) insight.Avanco = (int)av;
-//         if (found.TryGetValue("ProximoStory", out var ps)) insight.ProximoStory = (int)ps;
-//         if (found.TryGetValue("Voltar", out var vo)) insight.Voltar = (int)vo;
-//         if (found.TryGetValue("Saiu", out var sa)) insight.Saiu = (int)sa;
-//         if (found.TryGetValue("VisitasPerfil", out var vp)) insight.VisitasAoPerfil = (int)vp;
-//         if (found.TryGetValue("ToquesLinkExt", out var tl)) insight.AlcanceSeguidores = (int)tl;
-//         if (found.TryGetValue("NovosSeguidores", out var ns)) insight.ComecaramASeguir = (int)ns;
-//         if (found.TryGetValue("ContasAlcancadas", out var ca)) insight.ContasAlcancadas = (int)ca;
-//         if (found.TryGetValue("ContasComEngajamento", out var ce)) insight.ContasComEngajamento = (int)ce;
+    //         // preenche o insight
+    //         if (found.TryGetValue("Visualizacoes", out var vis)) insight.Visualizacoes = vis;
+    //         if (found.TryGetValue("Interacoes", out var it)) insight.Interacoes = it;
+    //         if (found.TryGetValue("Curtidas", out var cu)) insight.Curtidas = (int)cu;
+    //         if (found.TryGetValue("Respostas", out var re)) insight.Respostas = (int)re;
+    //         if (found.TryGetValue("Compartilhamentos", out var cp)) insight.Compartilhamentos = (int)cp;
+    //         if (found.TryGetValue("ToquesFigurinha", out var tf)) insight.AlcanceSeguidores = (int)tf;
+    //         if (found.TryGetValue("CliquesLink", out var cl)) insight.ContasAlcancadas = (int)cl;
+    //         if (found.TryGetValue("Avanco", out var av)) insight.Avanco = (int)av;
+    //         if (found.TryGetValue("ProximoStory", out var ps)) insight.ProximoStory = (int)ps;
+    //         if (found.TryGetValue("Voltar", out var vo)) insight.Voltar = (int)vo;
+    //         if (found.TryGetValue("Saiu", out var sa)) insight.Saiu = (int)sa;
+    //         if (found.TryGetValue("VisitasPerfil", out var vp)) insight.VisitasAoPerfil = (int)vp;
+    //         if (found.TryGetValue("ToquesLinkExt", out var tl)) insight.AlcanceSeguidores = (int)tl;
+    //         if (found.TryGetValue("NovosSeguidores", out var ns)) insight.ComecaramASeguir = (int)ns;
+    //         if (found.TryGetValue("ContasAlcancadas", out var ca)) insight.ContasAlcancadas = (int)ca;
+    //         if (found.TryGetValue("ContasComEngajamento", out var ce)) insight.ContasComEngajamento = (int)ce;
 
-//         Console.WriteLine(insight.AlcanceSeguidores);
+    //         Console.WriteLine(insight.AlcanceSeguidores);
 
-//         StateHasChanged();
-//     }
+    //         StateHasChanged();
+    //     }
 
 
     private void ParseFormResult(AnalyzeResult result)
@@ -806,14 +799,14 @@
     }
 
 
-/// <summary>
-/// Extrai o primeiro número inteiro encontrado numa string qualquer.
-/// </summary>
-private long ExtractFirstNumber(string text)
-{
-    var m = Regex.Match(text, @"(\d+)", RegexOptions.IgnoreCase);
-    return m.Success ? long.Parse(m.Groups[1].Value) : 0L;
-}
+    /// <summary>
+    /// Extrai o primeiro número inteiro encontrado numa string qualquer.
+    /// </summary>
+    private long ExtractFirstNumber(string text)
+    {
+        var m = Regex.Match(text, @"(\d+)", RegexOptions.IgnoreCase);
+        return m.Success ? long.Parse(m.Groups[1].Value) : 0L;
+    }
 
 
 }

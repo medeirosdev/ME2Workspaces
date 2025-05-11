@@ -35,3 +35,13 @@ CREATE TABLE tabela_influencers_data (
     PRIMARY KEY (ID),
     UNIQUE KEY (Email)
 );
+
+CREATE TABLE feedback_usuario (
+    Id_Feedback INT AUTO_INCREMENT PRIMARY KEY,
+    NomeUsuario VARCHAR(255) NOT NULL,
+    EmailUsuario VARCHAR(255) NOT NULL,
+    Feedback TEXT NOT NULL,
+    Resolvido BOOLEAN DEFAULT FALSE,
+    DataResolucao DATETIME NULL,
+    DataCriacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

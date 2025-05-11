@@ -1,0 +1,146 @@
+﻿@page "/verfeedbacks"
+@using ME2Workspaces.ModulosME2.FeedbackUsuarios
+@rendermode InteractiveServer
+<MudPaper Class="mx-auto mt-8 p-6" Elevation="4" Style="max-width:80%;padding:20px; border-radius:20px;">
+    <MudText Typo="Typo.h4" GutterBottom="true">Lista de Feedbacks</MudText>
+    <MudTable Items="@feedbacks" Elevation="0" Bordered="true" Striped="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Nome</MudTh>
+            <MudTh>Email</MudTh>
+            <MudTh>Feedback</MudTh>
+            <MudTh>Data Criação</MudTh>
+            <MudTh>Resposta</MudTh>
+            <MudTh>Resolvido</MudTh>
+            <MudTh>Ações</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nome">@context.NomeUsuario</MudTd>
+            <MudTd DataLabel="Email">@context.EmailUsuario</MudTd>
+            <MudTd DataLabel="Feedback">
+                <div style="white-space:pre-wrap;">@context.Feedback</div>
+            </MudTd>
+            <MudTd DataLabel="Data">@context.DataCriacao.ToString("dd/MM/yyyy HH:mm")</MudTd>
+            <MudTd DataLabel="Resposta">
+                <MudTextField @bind-Value="respostas[context.Id_Feedback]"
+                              Placeholder="Digite sua resposta..."
+                              Lines="2" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                           OnClick="@(() => OnResponder(context))"
+                           Disabled="string.IsNullOrWhiteSpace(respostas[context.Id_Feedback])"
+                           Class="mt-1">
+                    Responder
+                </MudButton>
+            </MudTd>
+            <MudTd DataLabel="Resolvido">
+                <MudCheckBox Color="Color.Primary" Value="@context.Resolvido"
+                             T="bool"
+                             ValueChanged="@(() => OnResolvedChanged(context))"/>
+            </MudTd>
+            <MudTd DataLabel="Ações">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                               OnClick="@(() => OnDelete(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private List<ME2Workspaces.ModulosME2.FeedbackUsuarios.FeedbackUsuario> feedbacks = new();
+    private Dictionary<long, string> respostas = new();
+    FeedbackUsuarioService FeedbackService = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await FeedbackService.GetAllFeedbacks();
+        if (result != null)
+        {
+            feedbacks = result.ToList();
+            foreach (var fb in feedbacks)
+            {
+                respostas[fb.Id_Feedback] = string.Empty;
+            }
+        }
+    }
+
+    public string storedEmail { get; set; }
+    public AuthUserModel dadosSessaoUsuario { get; set; }
+    /// <summary>
+    /// Recupera dados do usuário logado (exemplo de SessionStorage).
+    /// </summary>
+    public async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+                if (dadosSessaoUsuario == null)
+                    NavigationManager.NavigateTo("/");
+
+                if (dadosSessaoUsuario.ADMIN == false)
+                    NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
+        }
+    }
+
+    private async Task OnDelete(ME2Workspaces.ModulosME2.FeedbackUsuarios.FeedbackUsuario feedback)
+    {
+        var ok = await FeedbackService.DeleteFeedback(feedback.Id_Feedback);
+        if (ok)
+        {
+            feedbacks.Remove(feedback);
+            Snackbar?.Add($"Feedback de {feedback.NomeUsuario} excluído.", Severity.Success);
+            StateHasChanged();
+        }
+        else
+        {
+            Snackbar?.Add("Falha ao excluir feedback.", Severity.Error);
+        }
+    }
+
+    private async Task OnResolvedChanged(ME2Workspaces.ModulosME2.FeedbackUsuarios.FeedbackUsuario feedback)
+    {
+        var resolved = !feedback.Resolvido;
+        var statusAtt = false;
+        if (resolved)
+            statusAtt = await FeedbackService.MarkAsResolved(feedback.Id_Feedback, DateTime.Now);
+        else
+            statusAtt= await FeedbackService.MarkAsUnresolved(feedback.Id_Feedback);
+
+        feedback.Resolvido = resolved;
+
+        if (statusAtt)
+        {
+            Snackbar?.Add($"Feedback de {feedback.NomeUsuario} RESOLVIDO.", Severity.Success);
+        }
+        else
+        {
+            Snackbar?.Add("Falha ao atualizar feedback.", Severity.Error);
+        }
+    }
+
+    private async Task OnResponder(ME2Workspaces.ModulosME2.FeedbackUsuarios.FeedbackUsuario feedback)
+    {
+        var texto = respostas[feedback.Id_Feedback];
+        feedback.Feedback = $"{feedback.Feedback}\n\nResposta Admin: {texto}";
+        feedback.Resolvido = true;
+        feedback.DataResolucao = DateTime.Now;
+
+        var resultado = await FeedbackService.UpdateFeedback(feedback);
+
+        if(resultado == true)
+        {
+            Snackbar?.Add($"Feedback de {feedback.NomeUsuario} atualizado.", Severity.Success);
+        }
+        else
+        {
+            Snackbar?.Add("Falha ao atualizar feedback.", Severity.Error);
+        }
+        respostas[feedback.Id_Feedback] = string.Empty;
+    }
+}

@@ -49,6 +49,28 @@ namespace Me2Workspaces.ModulosME2.DBUser
             }
         }
 
+        public async Task<bool> DeleteUser(long id)
+        {
+            try
+            {
+                const string query = @"DELETE FROM usuario WHERE Id = @Id";
+
+                using (var conn = await connectionDB.NewConnection())
+                {
+                    if (conn == null)
+                        return false;
+
+                    var rowsAffected = await conn.ExecuteAsync(query, new { Id = id });
+                    return rowsAffected > 0;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+
         public async Task<bool> UpdateUser(AuthUserModel user)
         {
             try
@@ -100,6 +122,33 @@ namespace Me2Workspaces.ModulosME2.DBUser
             catch (Exception ex)
             {
               
+                return [];
+            }
+        }
+
+        public async Task<IEnumerable<AuthUserModel>> GettAllUsers()
+        {
+            try
+            {
+
+
+
+                string query = @"SELECT Id, Username, TipoDaConta, ADMIN, TipoDoContrato, 
+                            Email, Token, Senha, InformacoesEmpresa
+                     FROM usuario";
+
+                using (var conn = await connectionDB.NewConnection())
+                {
+                    if (conn == null) return null;
+
+                    var users = await conn.QueryAsync<AuthUserModel>(query);
+                    return users;
+                }
+
+            }
+            catch (Exception ex)
+            {
+
                 return [];
             }
         }
