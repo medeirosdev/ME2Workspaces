@@ -1,0 +1,11 @@
+{
+  "ConnectionStrings": {
+    "MySql": "Server=SEU_SERVIDOR;Database=SEU_BANCO;User=USUARIO;Password=SENHA;"
+  },
+  "Smtp": {
+    "Host": "smtp.seuprovedor.com",
+    "Port": 587,
+    "User": "seu@usuario.com",
+    "Pass": "suaSenha"
+  }
+}

@@ -1,56 +1,74 @@
 ﻿@page "/ia"
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="d-flex justify-center align-center" Style="height: 100vh; background: linear-gradient(135deg, #6a11cb, #2575fc);">
-    <MudPaper Elevation="4" Class="p-5" Style="width: 100%; max-width: 500px; text-align: center; color: white; border-radius: 12px;">
-        <MudText Typo="Typo.h3" GutterBottom="true" FontWeight="FontWeight.Bold">
-            ME2 IA
-        </MudText>
-        <MudText Typo="Typo.body1" GutterBottom="true">
-            A IA da ME2 pronta para trazer valor para sua empresa.
-        </MudText>
+<MudContainer Class="pa-6">
+    <MudPaper Elevation="3"
+              Class="pa-6 mx-auto"
+              Style="width:100%; max-width:1200px; border-radius:16px;
+                     background:rgba(255,255,255,0.9); backdrop-filter:blur(8px);">
 
-        <!-- Campo de Busca -->
-        <MudTextField Label="Digite sua pergunta..." FullWidth="true" Variant="Variant.Filled" Margin="Margin.Normal" @bind-Value="pergunta" />
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h4" Align="Align.Center">
+                ME2 IA
+            </MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Color="Color.Secondary">
+                Pergunte qualquer coisa e receba uma resposta inteligente
+            </MudText>
 
-        <!-- Botão de Busca -->
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" FullWidth="true" OnClick="BuscarPergunta">
-            Buscar
-        </MudButton>
+            <MudTextField @bind-Value="pergunta"
+                          Placeholder="Digite sua pergunta..."
+                          Variant="Variant.Outlined"
+                          FullWidth="true"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Send"
+                          OnAdornmentClick="BuscarPergunta" />
 
-        <!-- Resposta da IA -->
-        @if (!string.IsNullOrEmpty(respostaIA))
-        {
-            <MudCard Class="mt-4">
-                <MudCardContent>
-                    <MudText Typo="Typo.body2" Color="Color.Inherit">
-                        @respostaIA
-                    </MudText>
-                </MudCardContent>
-            </MudCard>
-        }
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       OnClick="BuscarPergunta"
+                       StartIcon="@Icons.Material.Filled.RocketLaunch">
+                Enviar
+            </MudButton>
 
-        <!-- Rodapé -->
-        <MudDivider Class="mt-5" />
-        <MudText Typo="Typo.caption" Color="Color.Inherit">
-            Desenvolvido por <MudLink Href="#" Color="Color.Primary">ME2 Tecnologia</MudLink>
-        </MudText>
+            @if (isLoading)
+            {
+                <MudProgressLinear Indeterminate="true"
+                                   Color="Color.Primary"
+                                   Class="mt-2" />
+            }
+
+            @if (!string.IsNullOrEmpty(respostaIA))
+            {
+                <MudCard Class="mt-4"
+                         Style="width:100%;"
+                         Elevation="1">
+                    <MudCardContent>
+                        <MudText Typo="Typo.body1"
+                                 Style="white-space:pre-wrap; font-size:1.1rem; line-height:1.6;">
+                            @respostaIA
+                        </MudText>
+                    </MudCardContent>
+                </MudCard>
+            }
+        </MudStack>
     </MudPaper>
 </MudContainer>
 
 @code {
-    private string pergunta = string.Empty;  // Armazena a pergunta do usuário
-    private string respostaIA = string.Empty;  // Armazena a resposta da IA
+    private string pergunta = "";
+    private string respostaIA;
+    private bool isLoading;
 
-    // Função chamada quando o usuário clica no botão "Buscar"
     private async Task BuscarPergunta()
     {
-        if (!string.IsNullOrEmpty(pergunta))
-        {
-            // Chama o serviço da IA
-            respostaIA = await ME2IAService.PerguntarIA(pergunta);
+        if (string.IsNullOrWhiteSpace(pergunta))
+            return;
 
-            // Limpa o campo de entrada para nova pergunta
-            pergunta = string.Empty;
-        }
+        isLoading = true;
+        respostaIA = null;
+        StateHasChanged();
+       respostaIA = await ME2IAService.PerguntarIA(pergunta);
+
+        isLoading = false;
     }
 }

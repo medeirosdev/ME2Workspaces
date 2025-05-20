@@ -90,28 +90,26 @@
                     </MudPaper>
                 </MudItem>
 
-                <!-- Seção para exibir arquivos e botão de "Ler Imagem" -->
-                <MudItem xs="12">
-                    @if (files != null && files.Count > 0)
-                    {
-                        <MudText Typo="@Typo.h6">@files.Count() Arquivo@(files.Count() == 1 ? "" : "s"):</MudText>
-                        <MudList T="string">
-                            @foreach (var file in files)
-                            {
-                                <MudListItem Icon="@Icons.Material.Filled.AttachFile" @key="@file">
-                                    @file.Name <code>@file.Size bytes</code>
-                                </MudListItem>
-                            }
-                        </MudList>
-
-                        <MudButton Variant="Variant.Filled"
-                                   Style="@($"background-color:#2F67FF;color:#FFFF")"
-                                   OnClick="ProcessImage"
-                                   Disabled="!(files?.Count > 0)">
-                            Ler Imagem
-                        </MudButton>
-                    }
-                </MudItem>
+            <MudItem xs="12">
+                @if (files != null && files.Count > 0)
+                {
+                    <MudText Typo="Typo.h6">@files.Count Arquivo@(files.Count == 1 ? "" : "s"):</MudText>
+                    <MudList T="string">
+                        @foreach (var file in files)
+                        {
+                            <MudListItem Icon="@Icons.Material.Filled.AttachFile">
+                                @file.Name <code>@file.Size bytes</code>
+                            </MudListItem>
+                        }
+                    </MudList>
+                    <MudButton Variant="Variant.Filled"
+                               Style="background-color:#2F67FF;color:#FFFF"
+                               OnClick="ProcessAllImages"
+                               Disabled="files.Count == 0">
+                        Ler Todas as Imagens
+                    </MudButton>
+                }
+            </MudItem>
 
                 <!-- Métricas de Alcance -->
                 <MudItem xs="12">
@@ -247,6 +245,10 @@
         </MudButton> *@
 </MudContainer>
 
+<MudOverlay Visible="@isProcessing" ZIndex="1000">
+  <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+</MudOverlay>
+
 @code {
     private const string formRecognizerEndpoint = "https://me2reconimages.cognitiveservices.azure.com/";
     private const string formRecognizerApiKey = "ChWxD5aCUIXj9HpUtSTpXaWejuQkm2kgSC3I7EkUTWRldJWkKgroJQQJ99BEACZoyfiXJ3w3AAALACOGDq77";
@@ -255,6 +257,8 @@
 
 
 @code {
+
+    private bool isProcessing = false;
     [CascadingParameter] public IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public bool novoItem { get; set; } = true;
@@ -370,6 +374,46 @@
         files.Add(file);
     }
 
+    private async Task ProcessAllImages()
+    {
+        try
+        {
+
+        
+        if (files == null || files.Count == 0)
+        {
+            Snackbar.Add("Por favor, faça o upload de pelo menos uma imagem.", Severity.Warning);
+            return;
+        }
+        isProcessing = true;
+        StateHasChanged();  // força o UI a re-renderizar e mostrar o overlay
+        await Task.Delay(1000); // Simula um pequeno atraso para mostrar o overlay
+        var credential = new AzureKeyCredential(formRecognizerApiKey);
+        var client = new DocumentAnalysisClient(new Uri(formRecognizerEndpoint), credential);
+        string modelId = "prebuilt-layout";
+
+        foreach (var file in files)
+        {
+            await using var ms = new MemoryStream();
+            await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(ms);
+            ms.Position = 0;
+            var operation = await client.AnalyzeDocumentAsync(WaitUntil.Completed, modelId, ms);
+            ParseFormResult(operation.Value);
+        }
+
+        Snackbar.Add("Todas as imagens foram processadas com sucesso!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task ProcessImage()
     {
         if (files == null || files.Count == 0)
@@ -406,397 +450,205 @@
         Snackbar.Add("Imagem processada com Azure Form Recognizer!", Severity.Success);
     }
 
-    //     private void ParseFormResult(AnalyzeResult result)
-    //     {
-    //         // junta todo o texto, normalizando
-    //         var allText = string.Join("\n", result.Pages
-    //                                     .SelectMany(p => p.Lines)
-    //                                     .Select(l => l.Content))
-    //                          .Replace(".", "")
-    //                          .Replace(",", "")
-    //                          .ToLower();
-
-    //         // dicionário de regex para cada campo
-    //         var patterns = new Dictionary<string, string[]>
-    // {
-    //     {"Visualizacoes", new[] { @"visualiza[cç][õo]es?[:\s]*(\d+)", @"(\d+)\s*visualiza[cç][õo]es?" }},
-    //     {"Interacoes",    new[] { @"intera[cç][õo]es?[:\s]*(\d+)",   @"(\d+)\s*intera[cç][õo]es?"   }},
-    //     {"Curtidas",      new[] { @"curtidas?[:\s]*(\d+)",           @"(\d+)\s*curtidas?"           }},
-    //     {"Respostas",     new[] { @"respostas?[:\s]*(\d+)",          @"(\d+)\s*respostas?"          }},
-    //     {"Compartilhamentos", new[] { @"compartilhamentos?[:\s]*(\d+)", @"(\d+)\s*compartilhamentos?" }},
-    //     {"ToquesFigurinha",   new[] { @"toques? em figurinha[:\s]*(\d+)", @"(\d+)\s*toques? em figurinha" }},
-    //     {"CliquesLink",       new[] { @"cliques? no link[:\s]*(\d+)",    @"(\d+)\s*cliques? no link"    }},
-    //     {"Avanco",            new[] { @"avan[cç]os?[:\s]*(\d+)",         @"(\d+)\s*avan[cç]os?"         }},
-    //     {"ProximoStory",      new[] { @"pr[oó]ximo story[:\s]*(\d+)",    @"(\d+)\s*pr[oó]ximo story"    }},
-    //     {"Voltar",            new[] { @"voltar[:\s]*(\d+)",             @"(\d+)\s*voltar"              }},
-    //     {"Saiu",              new[] { @"saiu[:\s]*(\d+)",               @"(\d+)\s*saiu"                }},
-    //     {"VisitasPerfil",     new[] { @"visitas ao perfil[:\s]*(\d+)",   @"(\d+)\s*visitas ao perfil"   }},
-    //     {"ToquesLinkExt",     new[] { @"toques em links externos[:\s]*(\d+)", @"(\d+)\s*toques em links externos" }},
-    //     {"NovosSeguidores",   new[] { @"come[cç]aram a seguir[:\s]*(\d+)", @"(\d+)\s*come[cç]aram a seguir" }},
-    //     {"ContasAlcancadas",      new[] { @"contas alcan[cç]adas[:\s]*(\d+)", @"(\d+)\s*contas alcan[cç]adas" }},
-    //     {"ContasComEngajamento",  new[] { @"contas com engajamento[:\s]*(\d+)", @"(\d+)\s*contas com engajamento" }},
-    // };
-
-    //         var found = new Dictionary<string, long>();
-    //         foreach (var kv in patterns)
-    //         {
-    //             foreach (var pat in kv.Value)
-    //             {
-    //                 var m = Regex.Match(allText, pat, RegexOptions.IgnoreCase);
-    //                 if (m.Success && long.TryParse(m.Groups[1].Value, out var v))
-    //                 {
-    //                     found[kv.Key] = v;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-
-    //         // preenche o insight
-    //         if (found.TryGetValue("Visualizacoes", out var vis)) insight.Visualizacoes = vis;
-    //         if (found.TryGetValue("Interacoes", out var it)) insight.Interacoes = it;
-    //         if (found.TryGetValue("Curtidas", out var cu)) insight.Curtidas = (int)cu;
-    //         if (found.TryGetValue("Respostas", out var re)) insight.Respostas = (int)re;
-    //         if (found.TryGetValue("Compartilhamentos", out var cp)) insight.Compartilhamentos = (int)cp;
-    //         if (found.TryGetValue("ToquesFigurinha", out var tf)) insight.AlcanceSeguidores = (int)tf;
-    //         if (found.TryGetValue("CliquesLink", out var cl)) insight.ContasAlcancadas = (int)cl;
-    //         if (found.TryGetValue("Avanco", out var av)) insight.Avanco = (int)av;
-    //         if (found.TryGetValue("ProximoStory", out var ps)) insight.ProximoStory = (int)ps;
-    //         if (found.TryGetValue("Voltar", out var vo)) insight.Voltar = (int)vo;
-    //         if (found.TryGetValue("Saiu", out var sa)) insight.Saiu = (int)sa;
-    //         if (found.TryGetValue("VisitasPerfil", out var vp)) insight.VisitasAoPerfil = (int)vp;
-    //         if (found.TryGetValue("ToquesLinkExt", out var tl)) insight.AlcanceSeguidores = (int)tl;
-    //         if (found.TryGetValue("NovosSeguidores", out var ns)) insight.ComecaramASeguir = (int)ns;
-    //         if (found.TryGetValue("ContasAlcancadas", out var ca)) insight.ContasAlcancadas = (int)ca;
-    //         if (found.TryGetValue("ContasComEngajamento", out var ce)) insight.ContasComEngajamento = (int)ce;
-
-    //         Console.WriteLine(insight.AlcanceSeguidores);
-
-    //         StateHasChanged();
-    //     }
-
-    //     private void ParseFormResult(AnalyzeResult result)
-    //     {
-    //         // junta todo o texto, normalizando
-    //         var allText = string.Join("\n", result.Pages
-    //                                     .SelectMany(p => p.Lines)
-    //                                     .Select(l => l.Content))
-    //                          .Replace(".", "")
-    //                          .Replace(",", "")
-    //                          .ToLower();
-
-    //         // dicionário de regex para cada campo
-    //         var patterns = new Dictionary<string, string[]>
-    // {
-    //     {"Visualizacoes", new[] { @"visualiza[cç][õo]es?[:\s]*(\d+)", @"(\d+)\s*visualiza[cç][õo]es?" }},
-    //     {"Interacoes",    new[] { @"intera[cç][õo]es?[:\s]*(\d+)",   @"(\d+)\s*intera[cç][õo]es?"   }},
-    //     {"Curtidas",      new[] { @"curtidas?[:\s]*(\d+)",           @"(\d+)\s*curtidas?"           }},
-    //     {"Respostas",     new[] { @"respostas?[:\s]*(\d+)",          @"(\d+)\s*respostas?"          }},
-    //     {"Compartilhamentos", new[] { @"compartilhamentos?[:\s]*(\d+)", @"(\d+)\s*compartilhamentos?" }},
-    //     {"ToquesFigurinha",   new[] { @"toques? em figurinha[:\s]*(\d+)", @"(\d+)\s*toques? em figurinha" }},
-    //     {"CliquesLink",       new[] { @"cliques? no link[:\s]*(\d+)",    @"(\d+)\s*cliques? no link"    }},
-    //     {"Avanco",            new[] { @"avan[cç]os?[:\s]*(\d+)",         @"(\d+)\s*avan[cç]os?"         }},
-    //     {"ProximoStory",      new[] { @"pr[oó]ximo story[:\s]*(\d+)",    @"(\d+)\s*pr[oó]ximo story"    }},
-    //     {"Voltar",            new[] { @"voltar[:\s]*(\d+)",             @"(\d+)\s*voltar"              }},
-    //     {"Saiu",              new[] { @"saiu[:\s]*(\d+)",               @"(\d+)\s*saiu"                }},
-    //     {"VisitasPerfil",     new[] { @"visitas ao perfil[:\s]*(\d+)",   @"(\d+)\s*visitas ao perfil"   }},
-    //     {"ToquesLinkExt",     new[] { @"toques em links externos[:\s]*(\d+)", @"(\d+)\s*toques em links externos" }},
-    //     {"NovosSeguidores",   new[] { @"come[cç]aram a seguir[:\s]*(\d+)", @"(\d+)\s*come[cç]aram a seguir" }},
-    //     {"ContasAlcancadas",      new[] { @"contas alcan[cç]adas[:\s]*(\d+)", @"(\d+)\s*contas alcan[cç]adas" }},
-    //     {"ContasComEngajamento",  new[] { @"contas com engajamento[:\s]*(\d+)", @"(\d+)\s*contas com engajamento" }},
-    // };
-
-    //         var found = new Dictionary<string, long>();
-    //         foreach (var kv in patterns)
-    //         {
-    //             foreach (var pat in kv.Value)
-    //             {
-    //                 var m = Regex.Match(allText, pat, RegexOptions.IgnoreCase);
-    //                 if (m.Success && long.TryParse(m.Groups[1].Value, out var v))
-    //                 {
-    //                     found[kv.Key] = v;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-
-    //         // preenche o insight
-    //         if (found.TryGetValue("Visualizacoes", out var vis)) insight.Visualizacoes = vis;
-    //         if (found.TryGetValue("Interacoes", out var it)) insight.Interacoes = it;
-    //         if (found.TryGetValue("Curtidas", out var cu)) insight.Curtidas = (int)cu;
-    //         if (found.TryGetValue("Respostas", out var re)) insight.Respostas = (int)re;
-    //         if (found.TryGetValue("Compartilhamentos", out var cp)) insight.Compartilhamentos = (int)cp;
-    //         if (found.TryGetValue("ToquesFigurinha", out var tf)) insight.AlcanceSeguidores = (int)tf;
-    //         if (found.TryGetValue("CliquesLink", out var cl)) insight.ContasAlcancadas = (int)cl;
-    //         if (found.TryGetValue("Avanco", out var av)) insight.Avanco = (int)av;
-    //         if (found.TryGetValue("ProximoStory", out var ps)) insight.ProximoStory = (int)ps;
-    //         if (found.TryGetValue("Voltar", out var vo)) insight.Voltar = (int)vo;
-    //         if (found.TryGetValue("Saiu", out var sa)) insight.Saiu = (int)sa;
-    //         if (found.TryGetValue("VisitasPerfil", out var vp)) insight.VisitasAoPerfil = (int)vp;
-    //         if (found.TryGetValue("ToquesLinkExt", out var tl)) insight.AlcanceSeguidores = (int)tl;
-    //         if (found.TryGetValue("NovosSeguidores", out var ns)) insight.ComecaramASeguir = (int)ns;
-    //         if (found.TryGetValue("ContasAlcancadas", out var ca)) insight.ContasAlcancadas = (int)ca;
-    //         if (found.TryGetValue("ContasComEngajamento", out var ce)) insight.ContasComEngajamento = (int)ce;
-
-    //         Console.WriteLine(insight.AlcanceSeguidores);
-
-    //         StateHasChanged();
-    //     }
+    
 
 
     private void ParseFormResult(AnalyzeResult result)
     {
-        // Dicionário temporário para armazenar os dados extraídos antes de atribuir ao objeto insight.
         var extractedData = new Dictionary<string, long>();
+        Func<string, string> normalizeTextForParsing = text => string.IsNullOrEmpty(text) ? "" : text.ToLower().Replace(".", "").Replace(",", "");
 
-        // Normaliza o texto removendo pontos e vírgulas que são usados como separadores de milhar.
-        // O Azure Form Recognizer já pode fornecer o conteúdo da linha sem esses caracteres,
-        // mas aplicamos a normalização para garantir consistência, especialmente para regex.
-        Func<string, string> normalizeTextForParsing = (text) =>
-        {
-            if (string.IsNullOrEmpty(text)) return string.Empty;
-            return text.ToLower().Replace(".", "").Replace(",", "");
-        };
+        var kvpKeyMappings = new Dictionary<string, Dictionary<string, string[]>>
+            {
+                ["por"] = new Dictionary<string, string[]>
+                {
+                    ["Visualizacoes"] = new[] { "visualizações", "visualizacões", "visualizacoes" },
+                    ["Interacoes"] = new[] { "interações", "interacões", "interacoes" },
+                    ["Curtidas"] = new[] { "curtidas" },
+                    ["Respostas"] = new[] { "respostas" },
+                    ["Compartilhamentos"] = new[] { "compartilhamentos" },
+                    ["ToquesFigurinha"] = new[] { "toques em figurinha", "toques na figurinha" },
+                    ["CliquesLink"] = new[] { "cliques no link" },
+                    ["Avanco"] = new[] { "avanço", "avanco" },
+                    ["ProximoStory"] = new[] { "próximo story", "proximo story" },
+                    ["Voltar"] = new[] { "voltar" },
+                    ["Saiu"] = new[] { "saiu" },
+                    ["VisitasPerfil"] = new[] { "visitas ao perfil" },
+                    ["ToquesLinkExterno"] = new[] { "toques em links externos" },
+                    ["NovosSeguidores"] = new[] { "começaram a seguir" },
+                    ["ContasAlcancadas"] = new[] { "contas alcançadas" },
+                    ["ContasComEngajamento"] = new[] { "contas com engajamento" }
+                },
+                ["eng"] = new Dictionary<string, string[]>
+                {
+                    ["Visualizacoes"] = new[] { "views", "impressions" },
+                    ["Interacoes"] = new[] { "interactions", "engagement" },
+                    ["Curtidas"] = new[] { "likes" },
+                    ["Respostas"] = new[] { "replies", "comments" },
+                    ["Compartilhamentos"] = new[] { "shares" },
+                    ["ToquesFigurinha"] = new[] { "sticker taps" },
+                    ["CliquesLink"] = new[] { "link clicks" },
+                    ["Avanco"] = new[] { "forwards", "next" },
+                    ["ProximoStory"] = new[] { "next story" },
+                    ["Voltar"] = new[] { "back" },
+                    ["Saiu"] = new[] { "exited", "dropped" },
+                    ["VisitasPerfil"] = new[] { "profile visits" },
+                    ["ToquesLinkExterno"] = new[] { "external link taps" },
+                    ["NovosSeguidores"] = new[] { "new followers", "started following" },
+                    ["ContasAlcancadas"] = new[] { "accounts reached", "reach" },
+                    ["ContasComEngajamento"] = new[] { "accounts engaged", "engaged accounts" }
+                },
+                ["spa"] = new Dictionary<string, string[]>
+                {
+                    ["Visualizacoes"] = new[] { "visualizaciones", "impresiones" },
+                    ["Interacoes"] = new[] { "interacciones" },
+                    ["Curtidas"] = new[] { "me gusta" },
+                    ["Respostas"] = new[] { "respuestas", "comentarios" },
+                    ["Compartilhamentos"] = new[] { "compartidos" },
+                    ["ToquesFigurinha"] = new[] { "toques en sticker", "toques sticker" },
+                    ["CliquesLink"] = new[] { "clics en el enlace", "clics enlace" },
+                    ["Avanco"] = new[] { "avances", "siguiente" },
+                    ["ProximoStory"] = new[] { "siguiente historia" },
+                    ["Voltar"] = new[] { "atrás", "volver" },
+                    ["Saiu"] = new[] { "salidas" },
+                    ["VisitasPerfil"] = new[] { "visitas al perfil" },
+                    ["ToquesLinkExterno"] = new[] { "toques en enlaces externos" },
+                    ["NovosSeguidores"] = new[] { "nuevos seguidores", "comenzaron a seguir" },
+                    ["ContasAlcancadas"] = new[] { "cuentas alcanzadas", "alcance" },
+                    ["ContasComEngajamento"] = new[] { "cuentas con interacción", "cuentas que interactuaron" }
+                }
+            };
 
-        // Definição de palavras-chave e padrões Regex por idioma
-        // selectedLanguage deve ser "por", "eng", ou "spa"
-        var kvpKeyMappings = new Dictionary<string, Dictionary<string, string[]>>();
-        var regexValuePatterns = new Dictionary<string, Dictionary<string, string[]>>();
+        var regexValuePatterns = new Dictionary<string, Dictionary<string, string[]>>
+            {
+                ["por"] = new Dictionary<string, string[]>
+                {
+                    ["Visualizacoes"] = new[] { @"visualiza[cç][õo]es[:\s]*(\d+)", @"(\d+)\s*visualiza[cç][õo]es" },
+                    ["Interacoes"] = new[] { @"intera[cç][õo]es[:\s]*(\d+)", @"(\d+)\s*intera[cç][õo]es" },
+                    ["Curtidas"] = new[] { @"curtidas[:\s]*(\d+)", @"(\d+)\s*curtidas" },
+                    ["Respostas"] = new[] { @"respostas[:\s]*(\d+)", @"(\d+)\s*respostas" },
+                    ["Compartilhamentos"] = new[] { @"compartilhamentos[:\s]*(\d+)", @"(\d+)\s*compartilhamentos" },
+                    ["ToquesFigurinha"] = new[] { @"toques em figurinhas?[:\s]*(\d+)", @"(\d+)\s*toques em figurinhas?" },
+                    ["CliquesLink"] = new[] { @"cliques no link[:\s]*(\d+)", @"(\d+)\s*cliques no link" },
+                    ["Avanco"] = new[] { @"avan[cç]os?[:\s]*(\d+)", @"(\d+)\s*avan[cç]os?" },
+                    ["ProximoStory"] = new[] { @"pr[oó]ximo story[:\s]*(\d+)", @"(\d+)\s*pr[oó]ximo story" },
+                    ["Voltar"] = new[] { @"voltar[:\s]*(\d+)", @"(\d+)\s*voltar" },
+                    ["Saiu"] = new[] { @"saiu[:\s]*(\d+)", @"(\d+)\s*saiu" },
+                    ["VisitasPerfil"] = new[] { @"visitas ao perfil[:\s]*(\d+)", @"(\d+)\s*visitas ao perfil" },
+                    ["ToquesLinkExterno"] = new[] { @"toques em links externos[:\s]*(\d+)", @"(\d+)\s*toques em links externos" },
+                    ["NovosSeguidores"] = new[] { @"come[cç]aram a seguir[:\s]*(\d+)", @"(\d+)\s*come[cç]aram a seguir" },
+                    ["ContasAlcancadas"] = new[] { @"contas alcan[cç]adas[:\s]*(\d+)", @"(\d+)\s*contas alcan[cç]adas" },
+                    ["ContasComEngajamento"] = new[] { @"contas com engajamento[:\s]*(\d+)", @"(\d+)\s*contas com engajamento" }
+                },
+                ["eng"] = new Dictionary<string, string[]>
+                {
+                    ["Visualizacoes"] = new[] { @"(?:views|impressions)[:\s]*(\d+)", @"(\d+)\s*(?:views|impressions)" },
+                    ["Interacoes"] = new[] { @"(?:interactions|engagement)[:\s]*(\d+)", @"(\d+)\s*(?:interactions|engagement)" },
+                    ["Curtidas"] = new[] { @"likes[:\s]*(\d+)", @"(\d+)\s*likes" },
+                    ["Respostas"] = new[] { @"(?:replies|comments)[:\s]*(\d+)", @"(\d+)\s*(?:replies|comments)" },
+                    ["Compartilhamentos"] = new[] { @"shares[:\s]*(\d+)", @"(\d+)\s*shares" },
+                    ["ToquesFigurinha"] = new[] { @"sticker taps?[:\s]*(\d+)", @"(\d+)\s*sticker taps?" },
+                    ["CliquesLink"] = new[] { @"link clicks?[:\s]*(\d+)", @"(\d+)\s*link clicks?" },
+                    ["Avanco"] = new[] { @"(?:forwards|next)[:\s]*(\d+)", @"(\d+)\s*(?:forwards|next)" },
+                    ["ProximoStory"] = new[] { @"next story[:\s]*(\d+)", @"(\d+)\s*next story" },
+                    ["Voltar"] = new[] { @"back[:\s]*(\d+)", @"(\d+)\s*back" },
+                    ["Saiu"] = new[] { @"(?:exited|dropped)[:\s]*(\d+)", @"(\d+)\s*(?:exited|dropped)" },
+                    ["VisitasPerfil"] = new[] { @"profile visits?[:\s]*(\d+)", @"(\d+)\s*profile visits?" },
+                    ["ToquesLinkExterno"] = new[] { @"external link taps?[:\s]*(\d+)", @"(\d+)\s*external link taps?" },
+                    ["NovosSeguidores"] = new[] { @"(?:new followers|started following)[:\s]*(\d+)", @"(\d+)\s*(?:new followers|started following)" },
+                    ["ContasAlcancadas"] = new[] { @"(?:accounts reached|reach)[:\s]*(\d+)", @"(\d+)\s*(?:accounts reached|reach)" },
+                    ["ContasComEngajamento"] = new[] { @"(?:accounts engaged|engaged accounts)[:\s]*(\d+)", @"(\d+)\s*(?:accounts engaged|engaged accounts)" }
+                },
+                ["spa"] = new Dictionary<string, string[]>
+                {
+                    ["Visualizacoes"] = new[] { @"(?:visualizaciones|impresiones)[:\s]*(\d+)", @"(\d+)\s*(?:visualizaciones|impresiones)" },
+                    ["Interacoes"] = new[] { @"interacciones[:\s]*(\d+)", @"(\d+)\s*interacciones" },
+                    ["Curtidas"] = new[] { @"me gusta[:\s]*(\d+)", @"(\d+)\s*me gusta" },
+                    ["Respostas"] = new[] { @"(?:respuestas|comentarios)[:\s]*(\d+)", @"(\d+)\s*(?:respuestas|comentarios)" },
+                    ["Compartilhamentos"] = new[] { @"compartidos[:\s]*(\d+)", @"(\d+)\s*compartidos" },
+                    ["ToquesFigurinha"] = new[] { @"toques en stickers?[:\s]*(\d+)", @"(\d+)\s*toques en stickers?" },
+                    ["CliquesLink"] = new[] { @"clics en el enlace[:\s]*(\d+)", @"(\d+)\s*clics en el enlace" },
+                    ["Avanco"] = new[] { @"(?:avances|siguiente)[:\s]*(\d+)", @"(\d+)\s*(?:avances|siguiente)" },
+                    ["ProximoStory"] = new[] { @"siguiente historia[:\s]*(\d+)", @"(\d+)\s*siguiente historia" },
+                    ["Voltar"] = new[] { @"(?:atrás|volver)[:\s]*(\d+)", @"(\d+)\s*(?:atrás|volver)" },
+                    ["Saiu"] = new[] { @"salidas[:\s]*(\d+)", @"(\d+)\s*salidas" },
+                    ["VisitasPerfil"] = new[] { @"visitas al perfil[:\s]*(\d+)", @"(\d+)\s*visitas al perfil" },
+                    ["ToquesLinkExterno"] = new[] { @"toques en enlaces externos[:\s]*(\d+)", @"(\d+)\s*toques en enlaces externos" },
+                    ["NovosSeguidores"] = new[] { @"(?:nuevos seguidores|comenzaron a seguir)[:\s]*(\d+)", @"(\d+)\s*(?:nuevos seguidores|comenzaron a seguir)" },
+                    ["ContasAlcancadas"] = new[] { @"(?:cuentas alcanzadas|alcance)[:\s]*(\d+)", @"(\d+)\s*(?:cuentas alcanzadas|alcance)" },
+                    ["ContasComEngajamento"] = new[] { @"(?:cuentas con interacción|cuentas que interactuaron)[:\s]*(\d+)", @"(\d+)\s*(?:cuentas con interacción|cuentas que interactuaram)" }
+                }
+            };
 
-        // Português
-        kvpKeyMappings["por"] = new Dictionary<string, string[]>
-    {
-        {"Visualizacoes", new[] { "visualizações", "visualizacões", "visualizacoes" }},
-        {"Interacoes", new[] { "interações", "interacões", "interacoes" }},
-        {"Curtidas", new[] { "curtidas" }},
-        {"Respostas", new[] { "respostas" }},
-        {"Compartilhamentos", new[] { "compartilhamentos" }},
-        {"ToquesFigurinha", new[] { "toques em figurinha", "toques na figurinha" }},
-        {"CliquesLink", new[] { "cliques no link" }},
-        {"Avanco", new[] { "avanço", "avanco" }},
-        {"ProximoStory", new[] { "próximo story", "proximo story" }},
-        {"Voltar", new[] { "voltar" }},
-        {"Saiu", new[] { "saiu" }},
-        {"VisitasPerfil", new[] { "visitas ao perfil" }},
-        {"ToquesLinkExterno", new[] { "toques em links externos" }},
-        {"NovosSeguidores", new[] { "começaram a seguir" }},
-        {"ContasAlcancadas", new[] { "contas alcançadas" }},
-        {"ContasComEngajamento", new[] { "contas com engajamento" }},
-    };
-        regexValuePatterns["por"] = new Dictionary<string, string[]>
-    {
-        {"Visualizacoes", new[] { @"visualiza[cç][õo]es[:\s]*(\d+)", @"(\d+)\s*visualiza[cç][õo]es" }},
-        {"Interacoes",    new[] { @"intera[cç][õo]es[:\s]*(\d+)",   @"(\d+)\s*intera[cç][õo]es"   }},
-        {"Curtidas",      new[] { @"curtidas[:\s]*(\d+)",           @"(\d+)\s*curtidas"           }},
-        {"Respostas",     new[] { @"respostas[:\s]*(\d+)",          @"(\d+)\s*respostas"          }},
-        {"Compartilhamentos", new[] { @"compartilhamentos[:\s]*(\d+)", @"(\d+)\s*compartilhamentos" }},
-        {"ToquesFigurinha",   new[] { @"toques em figurinhas?[:\s]*(\d+)", @"(\d+)\s*toques em figurinhas?" }},
-        {"CliquesLink",       new[] { @"cliques no link[:\s]*(\d+)",    @"(\d+)\s*cliques no link"    }},
-        {"Avanco",            new[] { @"avan[cç]os?[:\s]*(\d+)",         @"(\d+)\s*avan[cç]os?"         }},
-        {"ProximoStory",      new[] { @"pr[oó]ximo story[:\s]*(\d+)",    @"(\d+)\s*pr[oó]ximo story"    }},
-        {"Voltar",            new[] { @"voltar[:\s]*(\d+)",             @"(\d+)\s*voltar"              }},
-        {"Saiu",              new[] { @"saiu[:\s]*(\d+)",               @"(\d+)\s*saiu"                }},
-        {"VisitasPerfil",     new[] { @"visitas ao perfil[:\s]*(\d+)",   @"(\d+)\s*visitas ao perfil"   }},
-        {"ToquesLinkExterno", new[] { @"toques em links externos[:\s]*(\d+)", @"(\d+)\s*toques em links externos" }},
-        {"NovosSeguidores",   new[] { @"come[cç]aram a seguir[:\s]*(\d+)", @"(\d+)\s*come[cç]aram a seguir" }},
-        {"ContasAlcancadas",  new[] { @"contas alcan[cç]adas[:\s]*(\d+)", @"(\d+)\s*contas alcan[cç]adas" }},
-        {"ContasComEngajamento", new[] { @"contas com engajamento[:\s]*(\d+)", @"(\d+)\s*contas com engajamento" }},
-    };
+        string langKey = selectedLanguage.ToLower().EndsWith("eng") ? "eng"
+                        : selectedLanguage.ToLower().EndsWith("spa") ? "spa"
+                        : "por";
 
-        // Inglês
-        kvpKeyMappings["eng"] = new Dictionary<string, string[]>
-    {
-        {"Visualizacoes", new[] { "views", "impressions" }},
-        {"Interacoes", new[] { "interactions", "engagement" }},
-        {"Curtidas", new[] { "likes" }},
-        {"Respostas", new[] { "replies", "comments" }},
-        {"Compartilhamentos", new[] { "shares" }},
-        {"ToquesFigurinha", new[] { "sticker taps" }},
-        {"CliquesLink", new[] { "link clicks" }},
-        {"Avanco", new[] { "forwards", "next" }},
-        {"ProximoStory", new[] { "next story" }},
-        {"Voltar", new[] { "back" }},
-        {"Saiu", new[] { "exited", "dropped" }},
-        {"VisitasPerfil", new[] { "profile visits" }},
-        {"ToquesLinkExterno", new[] { "external link taps" }},
-        {"NovosSeguidores", new[] { "new followers", "started following" }},
-        {"ContasAlcancadas", new[] { "accounts reached", "reach" }},
-        {"ContasComEngajamento", new[] { "accounts engaged", "engaged accounts" }},
-    };
-        regexValuePatterns["eng"] = new Dictionary<string, string[]>
-    {
-        {"Visualizacoes", new[] { @"(?:views|impressions)[:\s]*(\d+)", @"(\d+)\s*(?:views|impressions)" }},
-        {"Interacoes",    new[] { @"(?:interactions|engagement)[:\s]*(\d+)",   @"(\d+)\s*(?:interactions|engagement)"   }},
-        {"Curtidas",      new[] { @"likes[:\s]*(\d+)",           @"(\d+)\s*likes"           }},
-        {"Respostas",     new[] { @"(?:replies|comments)[:\s]*(\d+)",          @"(\d+)\s*(?:replies|comments)"          }},
-        {"Compartilhamentos", new[] { @"shares[:\s]*(\d+)", @"(\d+)\s*shares" }},
-        {"ToquesFigurinha",   new[] { @"sticker taps?[:\s]*(\d+)", @"(\d+)\s*sticker taps?" }},
-        {"CliquesLink",       new[] { @"link clicks?[:\s]*(\d+)",    @"(\d+)\s*link clicks?"    }},
-        {"Avanco",            new[] { @"(?:forwards|next)[:\s]*(\d+)",         @"(\d+)\s*(?:forwards|next)"         }},
-        {"ProximoStory",      new[] { @"next story[:\s]*(\d+)",    @"(\d+)\s*next story"    }},
-        {"Voltar",            new[] { @"back[:\s]*(\d+)",             @"(\d+)\s*back"              }},
-        {"Saiu",              new[] { @"(?:exited|dropped)[:\s]*(\d+)",               @"(\d+)\s*(?:exited|dropped)"                }},
-        {"VisitasPerfil",     new[] { @"profile visits?[:\s]*(\d+)",   @"(\d+)\s*profile visits?"   }},
-        {"ToquesLinkExterno", new[] { @"external link taps?[:\s]*(\d+)", @"(\d+)\s*external link taps?" }},
-        {"NovosSeguidores",   new[] { @"(?:new followers|started following)[:\s]*(\d+)", @"(\d+)\s*(?:new followers|started following)" }},
-        {"ContasAlcancadas",  new[] { @"(?:accounts reached|reach)[:\s]*(\d+)", @"(\d+)\s*(?:accounts reached|reach)" }},
-        {"ContasComEngajamento", new[] { @"(?:accounts engaged|engaged accounts)[:\s]*(\d+)", @"(\d+)\s*(?:accounts engaged|engaged accounts)" }},
-    };
+        var currentKvpMappings = kvpKeyMappings[langKey];
+        var currentRegexPatterns = regexValuePatterns[langKey];
 
-        // Espanhol
-        kvpKeyMappings["spa"] = new Dictionary<string, string[]>
-    {
-        {"Visualizacoes", new[] { "visualizaciones", "impresiones" }},
-        {"Interacoes", new[] { "interacciones" }},
-        {"Curtidas", new[] { "me gusta" }},
-        {"Respostas", new[] { "respuestas", "comentarios" }},
-        {"Compartilhamentos", new[] { "compartidos" }},
-        {"ToquesFigurinha", new[] { "toques en sticker", "toques sticker" }},
-        {"CliquesLink", new[] { "clics en el enlace", "clics enlace" }},
-        {"Avanco", new[] { "avances", "siguiente" }},
-        {"ProximoStory", new[] { "siguiente historia" }},
-        {"Voltar", new[] { "atrás", "volver" }},
-        {"Saiu", new[] { "salidas" }},
-        {"VisitasPerfil", new[] { "visitas al perfil" }},
-        {"ToquesLinkExterno", new[] { "toques en enlaces externos" }},
-        {"NovosSeguidores", new[] { "nuevos seguidores", "comenzaron a seguir" }},
-        {"ContasAlcancadas", new[] { "cuentas alcanzadas", "alcance" }},
-        {"ContasComEngajamento", new[] { "cuentas con interacción", "cuentas que interactuaron" }},
-    };
-        regexValuePatterns["spa"] = new Dictionary<string, string[]>
-    {
-        {"Visualizacoes", new[] { @"(?:visualizaciones|impresiones)[:\s]*(\d+)", @"(\d+)\s*(?:visualizaciones|impresiones)" }},
-        {"Interacoes",    new[] { @"interacciones[:\s]*(\d+)",   @"(\d+)\s*interacciones"   }},
-        {"Curtidas",      new[] { @"me gusta[:\s]*(\d+)",           @"(\d+)\s*me gusta"           }},
-        {"Respostas",     new[] { @"(?:respuestas|comentarios)[:\s]*(\d+)",          @"(\d+)\s*(?:respuestas|comentarios)"          }},
-        {"Compartilhamentos", new[] { @"compartidos[:\s]*(\d+)", @"(\d+)\s*compartidos" }},
-        {"ToquesFigurinha",   new[] { @"toques en stickers?[:\s]*(\d+)", @"(\d+)\s*toques en stickers?" }},
-        {"CliquesLink",       new[] { @"clics en el enlace[:\s]*(\d+)",    @"(\d+)\s*clics en el enlace"    }},
-        {"Avanco",            new[] { @"(?:avances|siguiente)[:\s]*(\d+)",         @"(\d+)\s*(?:avances|siguiente)"         }},
-        {"ProximoStory",      new[] { @"siguiente historia[:\s]*(\d+)",    @"(\d+)\s*siguiente historia"    }},
-        {"Voltar",            new[] { @"(?:atrás|volver)[:\s]*(\d+)",             @"(\d+)\s*(?:atrás|volver)"              }},
-        {"Saiu",              new[] { @"salidas[:\s]*(\d+)",               @"(\d+)\s*salidas"                }},
-        {"VisitasPerfil",     new[] { @"visitas al perfil[:\s]*(\d+)",   @"(\d+)\s*visitas al perfil"   }},
-        {"ToquesLinkExterno", new[] { @"toques en enlaces externos[:\s]*(\d+)", @"(\d+)\s*toques en enlaces externos" }},
-        {"NovosSeguidores",   new[] { @"(?:nuevos seguidores|comenzaron a seguir)[:\s]*(\d+)", @"(\d+)\s*(?:nuevos seguidores|comenzaron a seguir)" }},
-        {"ContasAlcancadas",  new[] { @"(?:cuentas alcanzadas|alcance)[:\s]*(\d+)", @"(\d+)\s*(?:cuentas alcanzadas|alcance)" }},
-        {"ContasComEngajamento", new[] { @"(?:cuentas con interacción|cuentas que interactuaron)[:\s]*(\d+)", @"(\d+)\s*(?:cuentas con interacción|cuentas que interactuaron)" }},
-    };
-
-        // Determina o idioma a ser usado (padrão: português se não reconhecido)
-        string langKey = selectedLanguage?.ToLower() ?? "por"; // selectedLanguage vem da UI, ex: "languagePor"
-        if (langKey.EndsWith("eng")) langKey = "eng";
-        else if (langKey.EndsWith("spa")) langKey = "spa";
-        else langKey = "por"; // Default to Portuguese
-
-        var currentKvpMappings = kvpKeyMappings.ContainsKey(langKey) ? kvpKeyMappings[langKey] : kvpKeyMappings["por"];
-        var currentRegexPatterns = regexValuePatterns.ContainsKey(langKey) ? regexValuePatterns[langKey] : regexValuePatterns["por"];
-
-        // 1. Tentar extrair usando KeyValuePairs do Azure Form Recognizer
         if (result.KeyValuePairs != null)
         {
             foreach (var kvp in result.KeyValuePairs)
             {
-                string rawKeyText = kvp.Key?.Content;
-                string normalizedKeyText = normalizeTextForParsing(rawKeyText);
-                string rawValueText = kvp.Value?.Content;
-
-                if (string.IsNullOrEmpty(normalizedKeyText) || string.IsNullOrEmpty(rawValueText)) continue;
-
-                foreach (var mappingEntry in currentKvpMappings)
+                var keyText = normalizeTextForParsing(kvp.Key.Content);
+                var valueText = kvp.Value.Content;
+                if (string.IsNullOrEmpty(keyText) || string.IsNullOrEmpty(valueText)) continue;
+                foreach (var map in currentKvpMappings)
                 {
-                    string dataKey = mappingEntry.Key;
-                    if (extractedData.ContainsKey(dataKey)) continue; // Já encontrado por um KVP mais específico ou anterior
-
-                    foreach (var keyword in mappingEntry.Value)
+                    if (extractedData.ContainsKey(map.Key)) break;
+                    foreach (var kw in map.Value)
                     {
-                        if (normalizedKeyText.Contains(keyword))
+                        if (keyText.Contains(kw))
                         {
-                            string justDigits = Regex.Replace(rawValueText, @"[^\d]", "");
-                            if (long.TryParse(justDigits, out long numericValue))
+                            var digits = Regex.Replace(valueText, @"[^\d]", "");
+                            if (long.TryParse(digits, out var num))
                             {
-                                extractedData[dataKey] = numericValue;
-                                goto nextKvp; // Evita que a mesma chave KVP seja mapeada para múltiplos campos de dados
+                                extractedData[map.Key] = num;
+                                goto NextKvp;
                             }
                         }
                     }
                 }
-            nextKvp:;
+            NextKvp:;
             }
         }
 
-        // 2. Fallback ou complemento com Regex no texto concatenado
-        var allTextLines = result.Pages.SelectMany(p => p.Lines).Select(l => l.Content);
-        var allTextConcatenated = normalizeTextForParsing(string.Join("\n", allTextLines));
-
-        foreach (var patternEntry in currentRegexPatterns)
+        var allText = normalizeTextForParsing(string.Join("\n", result.Pages.SelectMany(p => p.Lines).Select(l => l.Content)));
+        foreach (var patEntry in currentRegexPatterns)
         {
-            string dataKey = patternEntry.Key;
-            if (extractedData.ContainsKey(dataKey)) continue; // Já encontrado por KVP
-
-            foreach (var pattern in patternEntry.Value)
+            if (extractedData.ContainsKey(patEntry.Key)) continue;
+            foreach (var pat in patEntry.Value)
             {
-                var match = Regex.Match(allTextConcatenated, pattern, RegexOptions.IgnoreCase);
-                if (match.Success && match.Groups.Count > 1)
+                var m = Regex.Match(allText, pat, RegexOptions.IgnoreCase);
+                if (m.Success && m.Groups.Count > 1)
                 {
-                    string valueFromRegex = match.Groups[1].Value;
-                    string justDigits = Regex.Replace(valueFromRegex, @"[^\d]", "");
-                    if (long.TryParse(justDigits, out long numericValue))
+                    var d = Regex.Replace(m.Groups[1].Value, @"[^\d]", "");
+                    if (long.TryParse(d, out var n))
                     {
-                        extractedData[dataKey] = numericValue;
-                        break; // Próximo dataKey
+                        extractedData[patEntry.Key] = n;
+                        break;
                     }
                 }
             }
         }
 
-        // 3. Atribuição ao objeto insight, garantindo que os campos não encontrados sejam 0
-        // Campos do formulário principal
-        insight.Visualizacoes = extractedData.TryGetValue("Visualizacoes", out var vis) ? vis : 0;
-        insight.Interacoes = extractedData.TryGetValue("Interacoes", out var it) ? it : 0;
-        insight.Curtidas = extractedData.TryGetValue("Curtidas", out var cu) ? (int)cu : 0;
-        insight.Respostas = extractedData.TryGetValue("Respostas", out var re) ? (int)re : 0;
-        insight.Compartilhamentos = extractedData.TryGetValue("Compartilhamentos", out var cp) ? (int)cp : 0;
-
-        // Mapeamento corrigido: Toques na Figurinha -> insight.AlcanceSeguidores
-        insight.AlcanceSeguidores = extractedData.TryGetValue("ToquesFigurinha", out var tf) ? (int)tf : 0;
-
-        // Mapeamento corrigido: Cliques no Link -> insight.CliquesNoLink (Assumindo que você adicionará este campo ao objeto Insight)
-        // Se o campo for insight.ContasAlcancadas para "Cliques no Link" conforme o formulário, use:
-        // insight.ContasAlcancadas = extractedData.TryGetValue("CliquesLink", out var cl) ? (int)cl : 0;
-        // Para este exemplo, vou criar um novo mapeamento para CliquesNoLink e manter ContasAlcancadas para seu próprio valor.
-        // Você precisará adicionar o campo `public int CliquesNoLink { get; set; }` à sua classe Insight.
-        // insight.CliquesNoLink = extractedData.TryGetValue("CliquesLink", out var cl) ? (int)cl : 0;
-        // Por ora, vou manter o comportamento do seu formulário, onde "Cliques no Link" vai para insight.ContasAlcancadas
-        insight.ContasAlcancadas = extractedData.TryGetValue("CliquesLink", out var cl) ? (int)cl : 0;
-
-        insight.Avanco = extractedData.TryGetValue("Avanco", out var av) ? (int)av : 0;
-        insight.ContasComEngajamento = extractedData.TryGetValue("ContasComEngajamento", out var ce) ? (int)ce : 0;
-
-        // Campos adicionais dos prints (que não estão explicitamente no formulário mas podem ser úteis)
-        insight.ProximoStory = extractedData.TryGetValue("ProximoStory", out var ps) ? (int)ps : 0;
-        insight.Voltar = extractedData.TryGetValue("Voltar", out var vo) ? (int)vo : 0;
-        insight.Saiu = extractedData.TryGetValue("Saiu", out var sa) ? (int)sa : 0;
-        insight.VisitasAoPerfil = extractedData.TryGetValue("VisitasPerfil", out var vp) ? (int)vp : 0;
-
-        // Este campo "ToquesLinkExterno" estava sendo atribuído a insight.AlcanceSeguidores no código original.
-        // Se você tiver um campo específico para ele, como insight.ToquesEmLinksExternos, use-o.
-        // insight.ToquesEmLinksExternos = extractedData.TryGetValue("ToquesLinkExterno", out var tle) ? (int)tle : 0;
-        // Por enquanto, vou deixar comentado, pois não há campo correspondente no formulário.
-
-        insight.ComecaramASeguir = extractedData.TryGetValue("NovosSeguidores", out var ns) ? (int)ns : 0;
-
-        // O campo "Contas Alcançadas" dos prints é diferente de "Cliques no Link".
-        // Se você tem um campo como insight.NumeroContasAlcancadas, use-o aqui.
-        // insight.NumeroContasAlcancadas = extractedData.TryGetValue("ContasAlcancadas", out var ca_val) ? (int)ca_val : 0;
-        // No código original, o `insight.ContasAlcancadas` do formulário era usado para "Cliques no Link".
-        // A regex "ContasAlcancadas" aqui se refere ao valor de "Contas Alcançadas" dos prints.
-        // Se o seu objeto `insight` tem um campo específico para "Contas Alcançadas" (o número, não os cliques no link),
-        // você deve atribuí-lo aqui. Ex: `insight.MetricaContasAlcancadas = extractedData.TryGetValue("ContasAlcancadas", out var ca_val) ? (int)ca_val : 0;`
-        // Para evitar conflito com `insight.ContasAlcancadas` já usado para "Cliques no Link" (conforme seu formulário),
-        // você precisará de um nome de propriedade diferente no objeto `Insight` para o valor de "Contas Alcançadas" dos prints.
-
-        // Para fins de demonstração, se você tiver um campo `insight.MetricaContasAlcancadas` para o valor de
+        if (insight.Visualizacoes == 0 && extractedData.TryGetValue("Visualizacoes", out var vis)) insight.Visualizacoes = vis;
+        if (insight.Interacoes == 0 && extractedData.TryGetValue("Interacoes", out var it)) insight.Interacoes = it;
+        if (insight.Curtidas == 0 && extractedData.TryGetValue("Curtidas", out var cu)) insight.Curtidas = (int)cu;
+        if (insight.Respostas == 0 && extractedData.TryGetValue("Respostas", out var re)) insight.Respostas = (int)re;
+        if (insight.Compartilhamentos == 0 && extractedData.TryGetValue("Compartilhamentos", out var cp)) insight.Compartilhamentos = (int)cp;
+        if (insight.AlcanceSeguidores == 0 && extractedData.TryGetValue("ToquesFigurinha", out var tf)) insight.AlcanceSeguidores = (int)tf;
+        if (insight.ContasAlcancadas == 0 && extractedData.TryGetValue("CliquesLink", out var cl)) insight.ContasAlcancadas = (int)cl;
+        if (insight.Avanco == 0 && extractedData.TryGetValue("Avanco", out var av)) insight.Avanco = (int)av;
+        if (insight.ContasComEngajamento == 0 && extractedData.TryGetValue("ContasComEngajamento", out var ce)) insight.ContasComEngajamento = (int)ce;
+        if (insight.ProximoStory == 0 && extractedData.TryGetValue("ProximoStory", out var ps)) insight.ProximoStory = (int)ps;
+        if (insight.Voltar == 0 && extractedData.TryGetValue("Voltar", out var vo)) insight.Voltar = (int)vo;
+        if (insight.Saiu == 0 && extractedData.TryGetValue("Saiu", out var sa)) insight.Saiu = (int)sa;
+        if (insight.VisitasAoPerfil == 0 && extractedData.TryGetValue("VisitasPerfil", out var vp)) insight.VisitasAoPerfil = (int)vp;
+        if (insight.ComecaramASeguir == 0 && extractedData.TryGetValue("NovosSeguidores", out var ns)) insight.ComecaramASeguir = (int)ns;
     }
+
 
 
     /// <summary>

@@ -1,4 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Azure;
+using Azure.AI.OpenAI;
+using Azure.AI.OpenAI.Chat;
+using OpenAI.Chat;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Net.Http;
@@ -9,63 +14,60 @@ namespace ME2Workspaces.Components.Pages.Me2IA
 {
     public class ME2IAService
     {
-        private const string API_KEY = ""; // Set your key here
-
-        private const string ENDPOINT = "https://ai-guilhermeellena7680ai336718873135.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-15-preview";
+        private const string API_KEY = "OG1oRFBKM2liaUxKSkJUTmJ0NU5YTVZZN0tpS2RMQ250Ulp3clQ2cFNEMEUyZ2I5Qm5sMEpRUUo5OUJFQUNab3lmaVhKM3czQUFBQkFDT0c3a3RB"; // Set your key here
 
         public static async Task<string> PerguntarIA(string pergunta)
         {
-            using (var httpClient = new HttpClient())
+            try
             {
-                httpClient.DefaultRequestHeaders.Add("api-key", API_KEY);
-                var payload = new
+
+           
+            var endpoint = new Uri("https://openaime2.openai.azure.com/");
+            var deploymentName = "o3-mini";
+            var apiKey = DecodeBase64(API_KEY);
+
+            AzureOpenAIClient azureClient = new(
+                endpoint,
+                new AzureKeyCredential(apiKey));
+            ChatClient chatClient = azureClient.GetChatClient(deploymentName);
+
+
+            List<ChatMessage> messages = new List<ChatMessage>()
                 {
-                    messages = new object[]
-                    {
-                  new {
-                      role = "system",
-                      content = new object[] {
-                          new {
-                              type = "text",
-                              text = "You are an AI assistant that helps people find information."
-                          }
-                      }
-                  },
-                  new {
-                      role = "user",
-                      content = new object[] {
-                          new {
-                              type = "image_url",
-                              image_url = new {
-                                  url = $"data:image/jpeg;base64"
-                              }
-                          },
-                          new {
-                              type = "text",
-                              text = pergunta
-                          }
-                      }
-                  }
-                    },
-                    temperature = 0.7,
-                    top_p = 0.95,
-                    max_tokens = 800,
-                    stream = false
+                    new SystemChatMessage(pergunta),
+                    new UserChatMessage("Responda a pergunta acima com detalhe e com muita inteligência."),
                 };
 
-                var response = await httpClient.PostAsync(ENDPOINT, new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json"));
+            var response = chatClient.CompleteChat(messages);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseData = JsonConvert.DeserializeObject<dynamic>(await response.Content.ReadAsStringAsync());
-                    return responseData;
-                }
-                else
-                {
-                    return $"Error: {response.StatusCode}, {response.ReasonPhrase}";
-                }
+            return response.Value.Content[0].Text;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro: " + ex.Message);
+                return "Erro";  
             }
         }
 
+        public static string DecodeBase64(string base64Encoded)
+        {
+            if (string.IsNullOrWhiteSpace(base64Encoded))
+                return string.Empty;
+
+            // Remove eventuais espaços ou quebras de linha
+            base64Encoded = base64Encoded.Trim();
+
+            try
+            {
+                byte[] bytes = Convert.FromBase64String(base64Encoded);
+                return Encoding.UTF8.GetString(bytes);
+            }
+            catch (FormatException)
+            {
+                // Lançado se a string não for Base64 válida
+                throw new ArgumentException("Entrada não é uma string Base64 válida.", nameof(base64Encoded));
+            }
+        }
     }
 }

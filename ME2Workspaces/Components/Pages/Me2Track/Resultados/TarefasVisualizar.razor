@@ -58,10 +58,33 @@
                     </MudItem>
                     <MudItem xs="12" sm="4">
                         <MudDateRangePicker Label="Período"
-                                            Value="dateRange"
-                                            ValueChanged="OnPeriodChanged"
+                                            DateRange="@dateRange"
+                                            DateRangeChanged="OnPeriodChanged"
                                             DateFormat="dd/MM/yyyy" />
                     </MudItem>
+                     <!-- Filtros de Status -->
+                    <MudItem xs="12" Class="mt-2 d-flex">
+                        <MudCheckBox T="bool" ValueChanged="CarregarDadosAsync" @bind-Checked="@showConcluidas" Label="Concluídas" Class="mr-4" />
+                        <MudCheckBox T="bool" ValueChanged="CarregarDadosAsync" @bind-Checked="@showPendentes" Label="Pendentes" Class="mr-4" />
+                        <MudCheckBox T="bool" ValueChanged="CarregarDadosAsync" @bind-Checked="@showVencidas" Label="Vencidas" />
+                    </MudItem>
+
+                    <!-- Barra do Influenciador Selecionado -->
+                    <MudItem xs="12" Class="mt-4">
+                        @if (selectedInfluencer != null && instagramUserData != null)
+                        {
+                            <MudPaper Class="pa-2 d-flex align-items-center" Elevation="1">
+                                <MudImage Height="40" Style="border-radius:100%" Class="mr-2" Src="@instagramUserData.profile_picture_url"  Alt="Profile" ObjectFit="ObjectFit.Cover" />
+                                <div class="d-flex flex-column">
+                                    <MudText Typo="Typo.subtitle1">@instagramUserData.username</MudText>
+                                    <MudText Typo="Typo.caption">@instagramUserData.followers_count followers</MudText>
+                                </div>
+                            </MudPaper>
+                        }
+                    </MudItem>
+
+
+
                 </MudGrid>
             </MudPaper>
         </MudItem>
@@ -247,6 +270,14 @@
 </MudContainer>
 
 @code {
+
+    private UserData instagramUserData;  // Armazena dados do Instagram
+
+    // filtros de status
+    private bool showConcluidas { get; set; } = true;
+    private bool showPendentes { get; set; } = true;
+    private bool showVencidas  { get; set; } = true;
+
     private List<InfluencerTask> tarefas = new();
     private InfluencerTask tarefaSelecionada;
     private List<Me2CampanhaModelo> campanhas = new();
@@ -325,9 +356,29 @@
         else
             influencers.Clear();
 
+        
+
         await CarregarTarefasAsync();
         AtualizarKpi();
         AtualizarGraficos();
+
+        // Aplica filtro de data
+        if (dateRange.Start.HasValue && dateRange.End.HasValue)
+        {
+            tarefas = tarefas
+                .Where(t =>
+                    t.DataCriacao.Date >= dateRange.Start.Value.Date &&
+                    t.DataCriacao.Date <= dateRange.End.Value.Date)
+                .ToList();
+        }
+
+        // filtro por status
+        tarefas = tarefas.Where(t =>
+            (showConcluidas && t.Feito)
+            || (showPendentes && !t.Feito && (!t.Prazo.HasValue || t.Prazo.Value > DateTime.Now))
+            || (showVencidas && !t.Feito && t.Prazo.HasValue && t.Prazo.Value < DateTime.Now)
+        ).ToList();
+
         inputDataG1 = new double[] { tarefasConcluidas, tarefasPendentes };
         isLoading = false;
     }
@@ -391,6 +442,20 @@
     private async Task OnInfluencerSelected(InfluencerModel influencer)
     {
         selectedInfluencer = influencer;
+        instagramUserData = null;
+
+        if (influencer != null)
+        {
+            try
+            {
+                instagramUserData = await ModuloInstagramME2Check.GetInstagramAPI(influencer.Instagram);
+            }
+            catch
+            {
+                Snackbar.Add("Erro ao carregar dados do Instagram", Severity.Error);
+            }
+        }
+
         await CarregarDadosAsync();
     }
 
