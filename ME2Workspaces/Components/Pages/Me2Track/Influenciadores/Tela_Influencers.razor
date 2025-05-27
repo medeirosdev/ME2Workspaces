@@ -4,12 +4,16 @@
 @using ME2Workspaces.Components.Pages.Me2Track.Insight_Influenciadores
 @using MudBlazor
 @using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using Me2Workspaces.ModulosME2.Me2InstagramCheck
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6" Style="border-radius:20px;ano">
+<MudPaper Elevation="1"
+          Style="border-radius:30px;padding:30px;">
+    <!-- todo o seu markup aqui dentro -->
     <!-- Stepper -->
     <MudPaper Elevation="0" Class="mb-8">
         <div class="stepper-container">
@@ -53,13 +57,13 @@
                                OnClick="@EditInfluencer">
                         Editar
                     </MudButton>
-                    <MudButton StartIcon="@Icons.Material.Filled.Analytics"
+                    @* <MudButton StartIcon="@Icons.Material.Filled.Analytics"
                                Variant="Variant.Outlined"
                                Color="Color.Info"
                                OnClick="@OnInsightsClick">
                         Me2 Track
                     </MudButton>
-                    <MudSpacer />
+                    <MudSpacer /> *@
                     <MudButton StartIcon="@Icons.Material.Filled.ArrowBack"
                                Variant="Variant.Text"
                                Color="Color.Default"
@@ -118,10 +122,23 @@
                     <PropertyColumn Property="x => x.Nome" Title="Nome">
                         <CellTemplate>
                             <MudStack Row="true" AlignItems="AlignItems.Center">
-                                <MudAvatar Color="Color.Primary" Size="Size.Small">
+                                @* <MudAvatar  Color="Color.Primary" Size="Size.Small">
                                     @(context.Item.Nome[0])
                                 </MudAvatar>
+                                <MudText>@context.Item.Nome</MudText> *@
+
+                                <MudAvatar Color="Color.Primary" Size="Size.Small">
+                                    @if (!string.IsNullOrEmpty(context.Item.URLFoto))
+                                        {
+                                            <MudImage Src="@(context.Item.URLFoto)" Alt="Profile" ObjectFit="ObjectFit.Cover" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Large" />
+                                        }
+                                    </MudAvatar>
                                 <MudText>@context.Item.Nome</MudText>
+
                             </MudStack>
                         </CellTemplate>
                     </PropertyColumn>
@@ -139,22 +156,25 @@
                     </PropertyColumn>
                     <TemplateColumn Title="Ações" CellClass="d-flex justify-end">
                         <CellTemplate>
-                            <MudStack Row="true" Spacing="0">
-                                <MudIconButton Icon="@Icons.Material.Filled.Analytics"
-                                               Color="Color.Info"
-                                               Size="Size.Small"
-                                               OnClick="@(() => OnInsightsClick(context.Item))"
-                                               Title="Ver Insights" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Assignment"
-                                               Color="Color.Primary"
-                                               Size="Size.Small"
-                                               OnClick="@(() => OnTaskAssignmentClick(context.Item))"
-                                               Title="Atribuir Tarefas" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                               Color="Color.Error"
-                                               Size="Size.Small"
-                                               OnClick="@(() => OnRemoveClick(context.Item))"
-                                               Title="Remover" />
+                            <MudStack Row="true" Spacing="1">
+                                <MudButton Color="Color.Info"
+                                           Size="Size.Large"
+                                           StartIcon="@Icons.Material.Filled.Analytics"
+                                           OnClick="@(() => OnInsightsClick(context.Item))">
+                                    Insights
+                                </MudButton>
+                                <MudButton Color="Color.Primary"
+                                           Size="Size.Large"
+                                           StartIcon="@Icons.Material.Filled.Assignment"
+                                           OnClick="@(() => OnTaskAssignmentClick(context.Item))">
+                                    Entregas
+                                </MudButton>
+                                <MudButton Color="Color.Error"
+                                           Size="Size.Large"
+                                           StartIcon="@Icons.Material.Filled.Delete"
+                                           OnClick="@(() => OnRemoveClick(context.Item))">
+                                    Remover
+                                </MudButton>
                             </MudStack>
                         </CellTemplate>
                     </TemplateColumn>
@@ -165,7 +185,7 @@
             </MudDataGrid>
         }
     </MudPaper>
-</MudContainer>
+</MudPaper>
 
 @code {
     [Parameter] public bool habilitaFiltroPorCampanha { get; set; }
@@ -206,13 +226,29 @@
                 ? await influencerService.GetInfluencersByCampaignIdAsync(idCampanha)
                 : await influencerService.GetAllInfluencersAsync();
 
-            influencers ??= new List<InfluencerModel>();
-            filteredInfluencers = new List<InfluencerModel>(influencers);
+            // Para cada influencer, busca a foto pelo username
+            foreach (var inf in influencers)
+            {
+                if (!string.IsNullOrWhiteSpace(inf.Instagram))
+                {
+                    try
+                    {
+                        var userData = await ModuloInstagramME2Check.GetInstagramAPI(inf.Instagram);
+                        inf.URLFoto = userData?.profile_picture_url;
+                    }
+                    catch
+                    {
+                        
+                    }
+                }
+            }
+
+            filteredInfluencers = influencers.ToList();
         }
         catch (Exception ex)
         {
             Snackbar.Add("Erro ao carregar influenciadores.", Severity.Error);
-            Console.WriteLine($"Erro: {ex.Message}");
+            Console.WriteLine(ex);
         }
         finally
         {
@@ -266,14 +302,15 @@
             if (await dialog.Result == DialogResult.Ok(true))
             {
                 await CarregarInfluencers();
-                Snackbar.Add("Influenciador criado com sucesso!", Severity.Success);
+                
             }
 
             if (!dialog.Result.IsCanceled)
             {
                 await CarregarInfluencers();
-                Snackbar.Add("Influenciador criado com sucesso!", Severity.Success);
             }
+
+            Snackbar.Add("Influenciador criado com sucesso!", Severity.Success);
         }
         catch (Exception ex)
         {

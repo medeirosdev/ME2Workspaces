@@ -36,6 +36,18 @@
                                             <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Large" />
                                         }
                                     </MudAvatar>
+                         @*            <MudText>
+                                        @if(userData != null)
+                                        {
+                                            <span>@userData.username</span>
+                                            <span>@userData.</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Instagram: @itemInfluencer.Instagram</span>
+                                        })
+                                    </MudText> *@
+
                                 </MudPaper>
                             </MudItem>
 
@@ -92,7 +104,7 @@
                                                       OnBlur="@(async () => await FetchInstagramData())" />
                                     </MudItem>
 
-                                    <MudItem xs="12" sm="6">
+                                    @* <MudItem xs="12" sm="6">
                                         <MudTextField @bind-Value="itemInfluencer.YouTube"
                                                       Label="YouTube"
                                                       Variant="Variant.Filled"
@@ -106,7 +118,7 @@
                                                       Variant="Variant.Filled"
                                                       Adornment="Adornment.Start"
                                                       AdornmentIcon="@Icons.Custom.Brands.TikTok" />
-                                    </MudItem>
+                                    </MudItem> *@
                                 </MudGrid>
                             </MudItem>
                         </MudGrid>
@@ -184,13 +196,15 @@
         }
     }
 
+    public UserData userData { get; set; } = new();
+
     private async Task FetchInstagramData()
     {
         if (string.IsNullOrWhiteSpace(itemInfluencer.Instagram)) return;
 
         try
         {
-            var userData = await ModuloInstagramME2Check.GetInstagramAPI(itemInfluencer.Instagram);
+            userData = await ModuloInstagramME2Check.GetInstagramAPI(itemInfluencer.Instagram);
             if (userData?.profile_picture_url != null)
             {
                 itemInfluencer.URLFoto = userData.profile_picture_url;

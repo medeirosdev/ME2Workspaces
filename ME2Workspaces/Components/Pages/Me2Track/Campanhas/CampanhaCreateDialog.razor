@@ -132,23 +132,43 @@
 
     private async Task EntrarCampanha()
     {
-        var parameters = new DialogParameters<Tela_Influencers>
-        {
-            { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
-            { x => x.idCampanha, id_campanha },
-            { x => x.habilitaFiltroPorCampanha, true},
-            {x => x.novoItem, false}
-        };
+        // Fecha o diálogo atual
+        MudDialog.Cancel();
 
-        var dialog = await MudDialogService.ShowAsync<Tela_Influencers>("Influencers da Campanha", parameters);
+        var parameters = new DialogParameters<Tela_Influencers>
+    {
+        { x => x.dadosSessaoUsuario,      dadosSessaoUsuario },
+        { x => x.idCampanha,              id_campanha        },
+        { x => x.habilitaFiltroPorCampanha, true              },
+        { x => x.novoItem,                false              }
+    };
+
+        var options = new DialogOptions
+            {
+                FullScreen = true,
+                CloseButton = true,      
+                NoHeader = false  
+            };
+
+        var dialog = await MudDialogService.ShowAsync<Tela_Influencers>(
+            "Influencers da Campanha",
+            parameters,
+            options
+        );
+
         if (await dialog.Result == DialogResult.Ok(true))
-        {
             Snackbar.Add("Alterações salvas com sucesso!", Severity.Success);
-        }
     }
 
     private async Task EntrarNaNovaCampanha(long idCampanhaNova)
     {
+        var options = new DialogOptions
+            {
+                FullScreen = true,
+                CloseButton = true,      
+                NoHeader = false  
+
+            };
         var parameters = new DialogParameters<Tela_Influencers>
         {
             { x => x.dadosSessaoUsuario, dadosSessaoUsuario },
@@ -157,7 +177,7 @@
             {x => x.novoItem, true}
         };
 
-        var dialog = await MudDialogService.ShowAsync<Tela_Influencers>("Influencers da Campanha", parameters);
+        var dialog = await MudDialogService.ShowAsync<Tela_Influencers>("Influencers da Campanha", parameters, options);
         if (await dialog.Result == DialogResult.Ok(true))
         {
             Snackbar.Add("Alterações salvas com sucesso!", Severity.Success);
