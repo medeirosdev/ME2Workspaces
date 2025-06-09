@@ -1,0 +1,186 @@
+﻿@page "/homegestaointerna"
+@using MudBlazor
+@using System.Globalization
+@using ME2Workspaces.ModulosME2.ME2GestaoInterna
+@using static ME2Workspaces.ModulosME2.ME2GestaoInterna.ClsGestaoInterna
+@inject ISnackbar Snackbar
+
+@rendermode InteractiveServer
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudStack Spacing="3">
+                <!-- Action Buttons -->
+                <MudStack Direction="Row" Spacing="2">
+                    <MudButton Variant="Variant.Filled"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               Color="Color.Primary"
+                               OnClick="AdicionarWorkspace">
+                        Novo Workspace
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.Edit"
+                               Disabled="!CanEdit"
+                               OnClick="EditarWorkspace">
+                        Editar
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               Disabled="!CanDelete"
+                               OnClick="ExcluirWorkspace">
+                        Excluir
+                    </MudButton>
+                </MudStack>
+
+                <!-- Workspaces Data Grid -->
+                <MudDataGrid T="Workspace"
+                             Items="@workspaces"
+                             Dense="true"
+                             Hover="true"
+                             Filterable="true"
+                             SortMode="SortMode.Multiple"
+                             SelectedItem="@selected"
+                             SelectedItemChanged="OnSelectedChanged"
+                             Class="elevation-1">
+                    <Columns>
+                        <PropertyColumn Property="w => w.Id" Title="ID" Width="80px" />
+                        <PropertyColumn Property="w => w.Nome" Title="Nome" />
+                        <PropertyColumn Property="w => w.Descricao" Title="Descrição" />
+                        <PropertyColumn Property="w => w.CriadoEm" Title="Criado Em" Format="dd/MM/yyyy HH:mm" />
+                        <PropertyColumn Property="w => w.DataInicio" Title="Início" Format="dd/MM/yyyy" />
+                        <PropertyColumn Property="w => w.DataFim" Title="Fim" Format="dd/MM/yyyy" />
+                    </Columns>
+                    <PagerContent>
+                        <MudDataGridPager T="Workspace" />
+                    </PagerContent>
+                </MudDataGrid>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<Workspace> workspaces = new();
+    private Workspace? selected;
+
+    private bool CanEdit => selected is not null;
+    private bool CanDelete => selected is not null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarWorkspaces();
+    }
+
+    private async Task CarregarWorkspaces()
+    {
+        try
+        {
+            GestaoInternaServico _servico = new();
+            workspaces = (await _servico.GetAllWorkspaces()).ToList();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao carregar workspaces: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void OnSelectedChanged(Workspace ws)
+    {
+        selected = ws;
+    }
+
+    public string storedEmail { get; set; }
+    public AuthUserModel dadosSessaoUsuario { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await VerificarLogin();
+        }
+    }
+
+    public async Task VerificarLogin()
+    {
+        try
+        {
+            storedEmail = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "userEmail");
+            if (!string.IsNullOrEmpty(storedEmail))
+            {
+                var userService = new UserService();
+                dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+                if (dadosSessaoUsuario == null)
+                    NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao recuperar o email: {ex.Message}");
+        }
+    }
+
+    private async Task AdicionarWorkspace()
+    {
+        dadosSessaoUsuario = await UserService.GetUserByEmail(storedEmail);
+
+        var parameters = new DialogParameters<WorkspaceDialog>
+        {
+            { x => x.Workspace,selected }
+        };
+
+        var dialog = await MudDialogService.ShowAsync<WorkspaceDialog>("Novo Workspace", parameters);
+        if (await dialog.Result == DialogResult.Ok(true))
+        {
+            await CarregarWorkspaces();
+            Snackbar.Add("Workspace criado com sucesso", Severity.Success);
+        }
+       
+    }
+
+    private async Task EditarWorkspace()
+    {
+        if (selected is null) return;
+
+        var parameters = new DialogParameters
+            {
+                ["Workspace"] = selected
+            };
+        var options = new DialogOptions { CloseButton = true, FullWidth = true };
+        var dialog = await MudDialogService.ShowAsync<WorkspaceDialog>("Editar Workspace", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await CarregarWorkspaces();
+            Snackbar.Add("Workspace atualizado", Severity.Success);
+        }
+    }
+
+    private async Task ExcluirWorkspace()
+    {
+        if (selected is null) return;
+
+        bool? confirmed = await MudDialogService.ShowMessageBox(
+            "Confirmação",
+            $"Deseja realmente excluir o workspace \"{selected.Nome}\"?",
+            yesText: "Sim", noText: "Não");
+
+        if (confirmed == true)
+        {
+            GestaoInternaServico _servico = new();
+            var ok = await _servico.DeleteWorkspace(selected.Id);
+            if (ok)
+            {
+                await CarregarWorkspaces();
+                Snackbar.Add("Workspace excluído", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Falha ao excluir workspace", Severity.Error);
+            }
+        }
+    }
+}

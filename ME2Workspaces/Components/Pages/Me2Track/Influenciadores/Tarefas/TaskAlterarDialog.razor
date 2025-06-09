@@ -1,54 +1,72 @@
-﻿@rendermode InteractiveServer
+﻿ @rendermode InteractiveServer
 @using MudBlazor
 @using ME2Workspaces.ModulosME2.TarefasInfluencer
 @inject ISnackbar Snackbar
 
 <MudDialog Style="border-radius:20px;padding:20px;">
-  <TitleContent>
-    @if(novoItem)
-    {
-            <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-2" /> <h2>Criar Tarefa</h2>
-    }
-    else
-    {
-            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" /> <h2>Editar Tarefa</h2>
-    }
-  </TitleContent>
-  
-  <DialogContent>
-    <MudForm @ref="form">
-      <MudStack Spacing="3">
-        <MudTextField T="string" Label="Descrição" @bind-Value="task.Descricao" Required="true" />
-        
-        <MudSelect T="TipoTarefa" Label="Tipo de Tarefa" @bind-Value="task.Tipo_Tarefa" Required="true">
-          @foreach (var value in Enum.GetValues(typeof(TipoTarefa)))
-          {
-              <MudSelectItem Value="@( (TipoTarefa)value )">@value</MudSelectItem>
-          }
-        </MudSelect>
-        
-        <MudDatePicker Label="Prazo" @bind-Date="@task.Prazo" Required="true" />
-        
-        @if(!novoItem)
+    <TitleContent>
+        @if (novoItem)
         {
-            <MudTextField T="DateTime" Label="Data de Criação" @bind-Value="task.DataCriacao" Disabled="true" />
-        
-        
-        <MudCheckBox T="bool" Label="Tarefa Concluída" @bind-Value="task.Feito" />
+            <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-2" /> <h2>Criar Tarefa</h2>
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" /> <h2>Editar Tarefa</h2>
+        }
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="form">
+            <MudStack Spacing="3">
+                <MudTextField T="string" Label="Descrição" @bind-Value="task.Descricao" Required="true" />
+
+                <MudSelect T="TipoTarefa" Label="Tipo de Tarefa" @bind-Value="task.Tipo_Tarefa" Required="true">
+                    @foreach (var value in Enum.GetValues(typeof(TipoTarefa)))
+                    {
+                        <MudSelectItem Value="@( (TipoTarefa)value )">@value</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudDatePicker Label="Prazo" @bind-Date="@task.Prazo" Required="true" />
+
+                @if (!novoItem)
+                {
+                    <MudTextField T="DateTime" Label="Data de Criação" @bind-Value="task.DataCriacao" Disabled="true" />
                 }
-      </MudStack>
-    </MudForm>
-  </DialogContent>
-  
-  <DialogActions>
-    <MudButton OnClick="Cancelar" Color="Color.Default">Cancelar</MudButton>
-    <MudButton OnClick="Salvar"  Style="@($"background-color:#2F67FF;color:#FFFF")" >Salvar</MudButton>
-  </DialogActions>
+                
+                    <MudCheckBox T="bool" Label="Concluído" @bind-Value="task.Feito" />
+                @if (novoItem)
+                {
+                    <MudCheckBox T="bool" Label="Essa Tarefa não é a própria a entrega" @bind-Value="@tarefaMesmoQueEntrega" />
+                    @if (tarefaMesmoQueEntrega == true)
+                    {
+                        <MudText>A criação dessa tarefa se refere a postagem do conteúdo e não a entrega</MudText>
+                        <MudText>
+                            Ao marcar essa opção, será criado mais um item, que será a entrega do insight do conteúdo
+
+                        </MudText>
+                        <MudText>
+                            Para isso, preencha abaixo quantos dias após a postagem do conteúdo você espera receber o insight da entrega do conteúdo.
+
+                        </MudText>
+                        <MudTextField T="string" Label="Após __ dias da postagem o influenciador irá entregar os insights" @bind-Value="@aposdiasTarefa" />
+                    }
+                }
+
+
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancelar" Color="Color.Default">Cancelar</MudButton>
+        <MudButton OnClick="Salvar" Style="@($"background-color:#2F67FF;color:#FFFF")">Salvar</MudButton>
+    </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] public IMudDialogInstance MudDialog { get; set; }
-
+    public string aposdiasTarefa { get; set; }
     // Parâmetros recebidos:
     [Parameter] public bool novoItem { get; set; }
     [Parameter] public long ID_Influencer { get; set; }
@@ -56,6 +74,7 @@
     [Parameter] public long ID_Usuario { get; set; }
     [Parameter] public long? taskId { get; set; } // Apenas para edição
 
+    public bool tarefaMesmoQueEntrega { get; set; }
     private InfluencerTask task = new InfluencerTask();
     private MudForm form;
     private readonly InfluencerTaskService taskService = new InfluencerTaskService();
@@ -70,15 +89,15 @@
         {
             // Inicializa uma nova tarefa com valores padrão
             task = new InfluencerTask
-            {
-                ID_Influencer = ID_Influencer,
-                ID_Campanha = IDCampanha,
-                DataCriacao = DateTime.Now,
-                Prazo = DateTime.Now.AddDays(7), // Prazo padrão de 7 dias
-                Feito = false,
-                Tipo_Tarefa = TipoTarefa.Stories, // Valor padrão
-                Descricao = string.Empty
-            };
+                {
+                    ID_Influencer = ID_Influencer,
+                    ID_Campanha = IDCampanha,
+                    DataCriacao = DateTime.Now,
+                    Prazo = DateTime.Now.AddDays(7), // Prazo padrão de 7 dias
+                    Feito = false,
+                    Tipo_Tarefa = TipoTarefa.Stories, // Valor padrão
+                    Descricao = string.Empty
+                };
         }
     }
 
@@ -103,6 +122,24 @@
             {
                 long newId = await taskService.CreateTask(task);
                 success = newId > 0;
+
+                if (tarefaMesmoQueEntrega && !string.IsNullOrEmpty(aposdiasTarefa) && int.TryParse(aposdiasTarefa, out int dias) && dias > 0)
+                {
+                    // Cria uma nova tarefa de entrega com base na tarefa atual
+                    var entregaTask = new InfluencerTask
+                        {
+                            ID_Influencer = task.ID_Influencer,
+                            ID_Campanha = task.ID_Campanha,
+                            DataCriacao = DateTime.Now,
+                            Prazo = task.Prazo?.AddDays(dias),
+                            Feito = false,
+                            Tipo_Tarefa = task.Tipo_Tarefa,
+                            Descricao = $"Entrega de insights após {dias} dias da postagem do conteúdo" + 
+                                        $" (Tarefa original: {task.Descricao})"
+                        };
+
+                    await taskService.CreateTask(entregaTask);
+                }
             }
             else
             {

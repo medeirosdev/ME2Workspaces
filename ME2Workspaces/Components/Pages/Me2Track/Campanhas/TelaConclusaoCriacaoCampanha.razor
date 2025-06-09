@@ -1,16 +1,20 @@
-﻿@using MudBlazor
+﻿@page "/campanha-detalhes/{ID_Campanha:long}"
+@using Me2Workspaces.ModulosME2.CampanhaService.Me2Campanha
+@using Me2Workspaces.ModulosME2.Influencer.InfluencerFormService
+@using ME2Workspaces.ModulosME2.TarefasInfluencer
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-6">
     <MudPaper Elevation="3" Class="pa-8 rounded-xl" Style="background: linear-gradient(to bottom right, var(--mud-palette-white), var(--mud-palette-surface))">
+        <!-- Success Header -->
         <MudGrid Justify="Justify.Center" Class="mb-8">
             <MudItem>
                 <MudElement HtmlTag="div" Class="success-animation">
                     <MudIcon Icon="@Icons.Material.Filled.CheckCircle" 
-                            Color="Color.Success" 
-                            Size="Size.Large" 
-                            Style="font-size: 4rem;" />
+                             Color="Color.Success" 
+                             Size="Size.Large" 
+                             Style="font-size: 4rem;" />
                 </MudElement>
             </MudItem>
         </MudGrid>
@@ -22,120 +26,129 @@
         <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary" Class="mb-6">
             Sua campanha foi configurada e está pronta para começar
         </MudText>
-        
-        <MudCard Elevation="0" 
-                 Class="rounded-lg border-2 border-solid mb-6" 
-                 Style="border-color: var(--mud-palette-primary-lighten)">
-            <MudCardContent>
-                <MudGrid>
-                    <MudItem xs="12" md="6" Class="pb-4">
-                        <MudText Typo="Typo.subtitle2" Color="Color.Primary">
-                            Nome da Campanha
-                        </MudText>
-                        <MudText Typo="Typo.h6" Class="mt-1 d-flex align-center">
-                            <MudIcon Icon="@Icons.Material.Filled.Campaign" 
-                                    Class="mr-2" 
-                                    Size="Size.Small" />
-                            @NomeCampanha
-                        </MudText>
-                    </MudItem>
-                    
-                    <MudItem xs="12" md="6" Class="pb-4">
-                        <MudText Typo="Typo.subtitle2" Color="Color.Primary">
-                            Influenciadores
-                        </MudText>
-                        <MudText Typo="Typo.h6" Class="mt-1 d-flex align-center">
-                            <MudIcon Icon="@Icons.Material.Filled.Group" 
-                                    Class="mr-2" 
-                                    Size="Size.Small" />
-                            @NumeroInfluenciadores influenciador@(NumeroInfluenciadores != 1 ? "es" : "")
-                        </MudText>
-                    </MudItem>
-                    
-                    <MudItem xs="12">
-                        <MudText Typo="Typo.subtitle2" Color="Color.Primary">
-                            Status
-                        </MudText>
-                        <MudChip T="string" Icon="@Icons.Material.Filled.PlayCircle"
-                                Color="Color.Success" 
-                                Size="Size.Large" 
-                                Class="mt-1 px-4">
-                            Pronta para iniciar
-                        </MudChip>
-                    </MudItem>
-                </MudGrid>
-            </MudCardContent>
-        </MudCard>
 
-        <MudGrid Spacing="3" Class="mt-8">
-            @* <MudItem xs="12" md="6">
-                
-            </MudItem> *@
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       Size="Size.Large"
-                       FullWidth="true"
-                       StartIcon="@Icons.Material.Filled.Dashboard"
-                       OnClick="@NavigateToGerenciamento"
-                       Class="py-3">
-                VOLTAR PARA O GERENCIADOR DE CAMPANHAS
+        @if (campanha == null)
+        {
+            <MudProgressCircular Indeterminate="true" Class="mx-auto" />
+        }
+        else
+        {
+            <!-- Campaign Summary -->
+            <MudDivider Class="my-6" />
+            <MudText Typo="Typo.h5" Class="mb-3">Detalhes da Campanha</MudText>
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">Nome da Campanha</MudText>
+                    <MudText Typo="Typo.h6">@campanha.NomeCampanha</MudText>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">Investimento Total</MudText>
+                    <MudText Typo="Typo.h6">@campanha.TotalInvestimento.ToString("C")</MudText>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">Data Início</MudText>
+                    <MudText Typo="Typo.h6">@campanha.DataInicio?.ToString("dd/MM/yyyy")</MudText>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">Data Término</MudText>
+                    <MudText Typo="Typo.h6">@campanha.DataTermino?.ToString("dd/MM/yyyy")</MudText>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary">Descrição</MudText>
+                    <MudText Typo="Typo.body1">@campanha.DescricaoCampanha</MudText>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Influencers & Tasks -->
+            <MudDivider Class="my-6" />
+            <MudText Typo="Typo.h5" Class="mb-3">Influenciadores e Tarefas</MudText>
+            <MudTable Items="influenciadores" Bordered="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Nome</MudTh>
+                    <MudTh>Instagram</MudTh>
+                    <MudTh>Total Tarefas</MudTh>
+                    <MudTh>Ações</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="inf">
+                    <MudTd>@inf.Nome</MudTd>
+                    <MudTd>@inf.Instagram</MudTd>
+                    <MudTd>@(tasksLookup.GetValueOrDefault(inf.ID)?.Count ?? 0)</MudTd>
+                    <MudTd>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => ToggleDetails(inf.ID))">
+                            @((expandedId == inf.ID) ? "Ocultar" : "Ver")
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            @if (expandedId.HasValue)
+            {
+                var selected = influenciadores.First(i => i.ID == expandedId.Value);
+                <MudPaper Class="pa-4 mt-4">
+                    <MudText Typo="Typo.subtitle2">Tarefas de @selected.Nome</MudText>
+                    @if (!tasksLookup.TryGetValue(selected.ID, out var lista))
+                    {
+                        <MudProgressCircular Indeterminate="true" Class="mx-auto" Size="Size.Small" />
+                    }
+                    else if (!lista.Any())
+                    {
+                        <MudText>Não há tarefas para este influenciador.</MudText>
+                    }
+                    else
+                    {
+                        <MudTable Items="lista" Dense="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>Descrição</MudTh>
+                                <MudTh>Tipo</MudTh>
+                                <MudTh>Prazo</MudTh>
+                            </HeaderContent>
+                            <RowTemplate Context="task">
+                                <MudTd>@task.Descricao</MudTd>
+                                <MudTd>@task.Tipo_Tarefa</MudTd>
+                                <MudTd>@task.Prazo?.ToString("dd/MM/yyyy")</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudPaper>
+            }
+
+            <!-- Back Button -->
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-6" OnClick="@(() => NavigationManager.NavigateTo("/campanhas"))">
+                Voltar ao Gerenciador
             </MudButton>
-            @* <MudItem xs="12" md="6">
-                <MudButton Variant="Variant.Outlined" 
-                          Color="Color.Primary" 
-                          Size="Size.Large" 
-                          FullWidth="true"
-                          StartIcon="@Icons.Material.Filled.Add"
-                          OnClick="@CriarNovaCampanha"
-                          Class="py-3">
-                    Criar Nova Campanha
-                </MudButton>
-            </MudItem> *@
-        </MudGrid>
+        }
     </MudPaper>
 </MudContainer>
 
-<style>
-    .success-animation {
-        animation: scaleIn 0.5s ease-out;
-    }
-
-    @@keyframes scaleIn {
-        0% {
-            transform: scale(0);
-            opacity: 0;
-        }
-        70% {
-            transform: scale(1.2);
-        }
-        100% {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
-</style>
 
 @code {
-    [Parameter]
-    public string NomeCampanha { get; set; } = "Black Friday 2024";
+    [Parameter] public long ID_Campanha { get; set; }
 
-    [Parameter]
-    public int NumeroInfluenciadores { get; set; } = 5;
-
-    private void NavigateToGerenciamento()
-    {
-        Snackbar.Add("Redirecionando para o painel de gerenciamento...", Severity.Info);
-        NavigationManager.NavigateTo("/campanhas");
-    }
-
-    private void CriarNovaCampanha()
-    {
-        Snackbar.Add("Iniciando nova campanha...", Severity.Info);
-        // NavigationManager.NavigateTo("/nova-campanha");
-    }
+    private Me2CampanhaService campanhaService;
+    private InfluencerFormService influencerService;
+    private InfluencerTaskService taskService;
+    private Me2CampanhaModelo campanha;
+    private List<InfluencerModel> influenciadores;
+    private Dictionary<long, List<InfluencerTask>> tasksLookup;
+    private long? expandedId;
 
     protected override void OnInitialized()
     {
         Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        campanhaService = new Me2CampanhaService();
+        influencerService = new InfluencerFormService();
+        taskService = new InfluencerTaskService();
+        tasksLookup = new Dictionary<long, List<InfluencerTask>>();
     }
+
+    protected override async Task OnInitializedAsync()
+    {
+        campanha = await campanhaService.GetCampanhaById(ID_Campanha);
+        influenciadores = await influencerService.GetInfluencersByCampaignIdAsync(ID_Campanha);
+        foreach (var inf in influenciadores)
+            tasksLookup[inf.ID] = await taskService.GetTasksByCampaignAndInfluencer(ID_Campanha, inf.ID);
+    }
+
+    private void ToggleDetails(long id)
+        => expandedId = expandedId == id ? (long?)null : id;
 }

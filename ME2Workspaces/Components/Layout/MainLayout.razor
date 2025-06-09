@@ -1,39 +1,204 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar" style="background:none">
-        <NavMenu />
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="nav-container">
+      <div class="nav-header">
+        <img src="/wallpapers/icon_Me2.png" alt="ME2Workspace" class="nav-logo" />
+        <span class="nav-title">Me2 Track®</span>
+      </div>
+      <nav class="nav-menu">
+        <NavLink class="nav-link" href="/">
+          <MudIcon Icon="@Icons.Material.Filled.Home" /> <span>Home</span>
+        </NavLink>
+        <NavLink class="nav-link" href="campanhas">
+          <MudIcon Icon="@Icons.Material.Filled.ViewList" /> <span>Campanhas</span>
+        </NavLink>
+        <NavLink class="nav-link" href="resultados">
+          <MudIcon Icon="@Icons.Material.Filled.Money" /> <span>Resultados</span>
+        </NavLink>
+        <NavLink class="nav-link" href="vertarefas">
+          <MudIcon Icon="@Icons.Material.Filled.Task" /> <span>Tarefas</span>
+        </NavLink>
+        <NavLink class="nav-link" href="feedbackUsuario">
+          <MudIcon Icon="@Icons.Material.Filled.Feedback" /> <span>Enviar Feedback</span>
+        </NavLink>
+        <NavLink class="nav-link" href="verfeedbacks">
+          <MudIcon Icon="@Icons.Material.Filled.List" /> <span>Ver Feedbacks</span>
+        </NavLink>
+        <NavLink class="nav-link" href="administrarcontas">
+          <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" /> <span>ADMIN – Contas</span>
+        </NavLink>
+        <NavLink class="nav-link" href="ocrme2">
+          <MudIcon Icon="@Icons.Material.Filled.Visibility" /> <span>OCR ME2</span>
+        </NavLink>
+        <NavLink class="nav-link" href="login">
+          <MudIcon Icon="@Icons.Material.Filled.Login" /> <span>Login</span>
+        </NavLink>
+      </nav>
     </div>
+  </aside>
 
-    <main>
-        <!-- Nav Top Bar simples -->
-        <header style="background-color: white; height: 50px; display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div href="user" class="nav-item">
-                <MudIcon href="user"  Style="margin:5px;height: 30px; width: 30px; border-radius: 50%;" Icon="@Icons.Material.Filled.Person"></MudIcon> <a href="/user">Meu Perfil</a>
-            </div>
-        </header>
+  <!-- Main area -->
+  <section class="main">
+    <header class="topbar">
+      <NavLink class="user-link" href="/user">
+        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Medium" /> <span>Meu Perfil</span>
+      </NavLink>
+    </header>
 
-        <article class="content px-4">
-            <MudThemeProvider />
-            <MudPopoverProvider />
-
-            @* Providers para MudBlazor *@
-            <MudDialogProvider FullWidth="false"
-                               MaxWidth="MaxWidth.Large"
-                               CloseButton="true"
-                               BackdropClick="false"
-                               NoHeader="true"
-                               Position="DialogPosition.Center"
-                               CloseOnEscapeKey="true" />
-
-            <MudSnackbarProvider />
-            @Body
-        </article>
+    <main class="content">
+      <MudThemeProvider />
+      <MudPopoverProvider />
+      <MudDialogProvider FullWidth="false"
+                         MaxWidth="MaxWidth.Large"
+                         CloseButton="true"
+                         BackdropClick="false"
+                         NoHeader="true"
+                         Position="DialogPosition.Center"
+                         CloseOnEscapeKey="true" />
+      <MudSnackbarProvider />
+      @Body
     </main>
+  </section>
 </div>
 
 <div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
+  An unhandled error has occurred.
+  <a href="" class="reload">Reload</a>
+  <a class="dismiss">🗙</a>
 </div>
+
+<style>
+  /* Layout grid/flex */
+  .layout {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .sidebar {
+    flex: 0 0 250px;
+    background: none;
+  }
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .topbar {
+    height: 50px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 20px;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+
+  /* Nav container */
+  .nav-container {
+    width: 100%;
+    height: 100%;
+    background-color: #2F67FF;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px 0;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  }
+  .nav-header {
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    margin-bottom: 30px;
+  }
+  .nav-logo {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+  }
+  .nav-title {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  .nav-menu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .nav-link {
+    display: flex;
+    align-items: center;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.3s;
+  }
+  .nav-link:hover {
+    background-color: #1a4eb0;
+  }
+  .nav-link span {
+    margin-left: 8px;
+  }
+
+  /* Profile link */
+  .user-link {
+    display: flex;
+    align-items: center;
+    color: #333;
+    text-decoration: none;
+  }
+  .user-link span {
+    margin-left: 8px;
+  }
+
+  /* Tablet: collapse sidebar */
+  @@media (max-width: 768px) {
+    .sidebar {
+      flex: 0 0 70px;
+    }
+    .nav-title {
+      display: none;
+    }
+    .nav-logo {
+      margin: 0 auto;
+    }
+    .nav-link {
+      justify-content: center;
+      padding: 10px 0;
+    }
+  }
+
+  /* Mobile: hide sidebar, header fixed, content full width */
+  @@media (max-width: 576px) {
+    .layout {
+      flex-direction: column;
+    }
+    .sidebar {
+      display: none;
+    }
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    .content {
+      margin-top: 50px;
+      padding: 0.5rem;
+    }
+  }
+</style>

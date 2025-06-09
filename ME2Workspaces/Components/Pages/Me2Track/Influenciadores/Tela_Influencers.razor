@@ -13,6 +13,10 @@
 
 <MudPaper Elevation="1"
           Style="border-radius:30px;padding:30px;">
+    @if(novoItem == true)
+    {
+        
+  
     <!-- todo o seu markup aqui dentro -->
     <!-- Stepper -->
     <MudPaper Elevation="0" Class="mb-8">
@@ -37,6 +41,8 @@
             }
         </div>
     </MudPaper>
+    }
+
     <MudPaper Elevation="0" Class="mb-4">
         <MudGrid>
             <MudItem xs="12">
@@ -157,18 +163,21 @@
                     <TemplateColumn Title="Ações" CellClass="d-flex justify-end">
                         <CellTemplate>
                             <MudStack Row="true" Spacing="1">
-                                <MudButton Color="Color.Info"
-                                           Size="Size.Large"
-                                           StartIcon="@Icons.Material.Filled.Analytics"
-                                           OnClick="@(() => OnInsightsClick(context.Item))">
-                                    Insights
-                                </MudButton>
-                                <MudButton Color="Color.Primary"
-                                           Size="Size.Large"
+                            @if (novoItem == false)
+                                {
+                                    <MudButton Color="Color.Info"
+                                    Size="Size.Large"
+                                    StartIcon="@Icons.Material.Filled.Analytics"
+                                    OnClick="@(() => OnInsightsClick(context.Item))">
+                                        Insights
+                                    </MudButton>
+                                    <MudButton Color="Color.Primary"
+                                    Size="Size.Large"
                                            StartIcon="@Icons.Material.Filled.Assignment"
                                            OnClick="@(() => OnTaskAssignmentClick(context.Item))">
                                     Entregas
                                 </MudButton>
+                                }
                                 <MudButton Color="Color.Error"
                                            Size="Size.Large"
                                            StartIcon="@Icons.Material.Filled.Delete"

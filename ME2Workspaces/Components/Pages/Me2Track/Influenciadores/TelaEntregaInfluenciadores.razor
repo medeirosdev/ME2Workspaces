@@ -415,19 +415,7 @@
 
     private async Task ConcluirCampanha()
     {
-        Me2CampanhaService servico = new();
-        var campanha_criada = await servico.GetCampanhaById(idCampanha);
-
-        var parameters = new DialogParameters<TelaConclusaoCriacaoCampanha>
-        {
-            { x => x.NomeCampanha, campanha_criada.NomeCampanha },
-            { x => x.NumeroInfluenciadores, influencers.Count }
-        };
-
-        await DialogService.ShowAsync<TelaConclusaoCriacaoCampanha>(
-            "Parabéns!",
-            parameters
-        );
+        NavigationManager.NavigateTo($"/conclusaoCampanha/{idCampanha}");
     }
 }
 <style>
